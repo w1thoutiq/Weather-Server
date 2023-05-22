@@ -212,7 +212,7 @@ async def unknown_message_text(message: Message):
 
 @flags.chat_action("upload_photo")
 async def send_graph_admin(message: Message, bot: Bot):
-    city = message.text[7::]
+    city = message.text[7::].capitalize()
     admin_graph(city)
     try:
         await bot.send_photo(
