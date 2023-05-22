@@ -116,7 +116,10 @@ def get_city_set():
         for ct in city_lst:
             for c in ct:
                 city_set.add(c)
-    city_set.remove('')
+    try:
+        city_set.remove('')
+    except KeyError:
+        pass
     return city_set
 
 
