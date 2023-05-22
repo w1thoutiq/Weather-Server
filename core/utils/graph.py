@@ -61,6 +61,7 @@ def save_data():
 
 
 def admin_graph(ct: str):
+    ct = ct.capitalize()
     with create_session() as db:
         temp = [i if i is not None else 'None' for i in db.query(
             AlertGraph.am12,
