@@ -19,7 +19,6 @@ from core.utils.graph import *
 
 
 async def start():
-    # '6178245829:AAGwMAb-dPju3eSoNRBT8n3pxRPoFISuMLA'
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
     dp = Dispatcher()
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')

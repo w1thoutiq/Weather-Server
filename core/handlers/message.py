@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, FSInputFile
 from aiogram.exceptions import TelegramNetworkError
@@ -232,7 +230,3 @@ async def unknown_message(message: Message):
     await message.reply(f'Я не знаю что с этим делать, но напоминаю,\n'
                         f'что вы можете использовать команду /help',
                         parse_mode='Markdown', reply_markup=mark())
-
-
-
-

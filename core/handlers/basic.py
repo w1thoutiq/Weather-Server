@@ -16,7 +16,6 @@ async def shutting_off(bot: Bot):
     return await bot.send_message(
         chat_id=settings.bots.admin_id,
         text="Бот выключен!",
-        disable_notification=True
     )
 
 
