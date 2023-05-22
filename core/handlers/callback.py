@@ -139,7 +139,8 @@ async def send_graph(call: CallbackQuery, bot: Bot):
             caption=f'График погоды города - <b>{city}</b> за <b>{datetime.now().date()-timedelta(days=1)}</b>'
         )
     except TelegramNetworkError:
-        await call.message.answer('Что-то пошло не так')
+        await call.message.answer('График еще не готов ☠')
+
 
 @flags.chat_action("typing")
 # startswith='alerts_'

@@ -7,14 +7,16 @@ async def startup(bot: Bot):
     await set_default_commands(bot)
     await bot.send_message(
         chat_id=settings.bots.admin_id,
-        text="Бот запущен!"
+        text="Бот запущен!",
+        disable_notification=True,
     )
 
 
 async def shutting_off(bot: Bot):
     return await bot.send_message(
         chat_id=settings.bots.admin_id,
-        text="Бот выключен!"
+        text="Бот выключен!",
+        disable_notification=True
     )
 
 

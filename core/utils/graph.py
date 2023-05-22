@@ -51,13 +51,62 @@ def save_data():
                 file_name = f'Graph\\{ct}\\{dt.now().date()}.png'
                 os.mkdir(f'Graph\\{ct}\\')
                 fig = plt.figure()
-                fig.savefig(file_name, dpi=150)
                 plt.plot(x, y)
+                fig.savefig(file_name, dpi=150)
             except FileExistsError:
                 warnings.simplefilter("ignore", UserWarning)
                 figure = plt.figure()
                 plt.plot(x, y)
                 figure.savefig(file_name, dpi=150)
+
+
+def admin_graph(ct: str):
+    with create_session() as db:
+        temp = [i if i is not None else 'None' for i in db.query(
+            AlertGraph.am12,
+            AlertGraph.am1,
+            AlertGraph.am2,
+            AlertGraph.am3,
+            AlertGraph.am4,
+            AlertGraph.am5,
+            AlertGraph.am6,
+            AlertGraph.am7,
+            AlertGraph.am8,
+            AlertGraph.am9,
+            AlertGraph.am10,
+            AlertGraph.am11,
+            AlertGraph.pm12,
+            AlertGraph.pm1,
+            AlertGraph.pm2,
+            AlertGraph.pm3,
+            AlertGraph.pm4,
+            AlertGraph.pm5,
+            AlertGraph.pm6,
+            AlertGraph.pm7,
+            AlertGraph.pm8,
+            AlertGraph.pm9,
+            AlertGraph.pm10,
+            AlertGraph.pm11
+        ).where(AlertGraph.city == ct).all()[0]]
+        y = []
+        while True:
+            try:
+                temp.remove('None')
+            except ValueError:
+                break
+        y.extend(temp)
+        x = list(range(len(y)))
+        try:
+            file_name = f'Graph\\{ct}\\{dt.now().date()}.png'
+            os.mkdir(f'Graph\\{ct}\\')
+            fig = plt.figure()
+            plt.plot(x, y)
+            fig.savefig(file_name, dpi=150)
+        except FileExistsError:
+            warnings.simplefilter("ignore", UserWarning)
+            figure = plt.figure()
+            plt.plot(x, y)
+            figure.savefig(file_name, dpi=150)
 
 
 def get_city_set():

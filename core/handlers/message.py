@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
+from aiogram.exceptions import TelegramNetworkError
 from aiogram import Bot
 from core.utils.simple_func import *
 from core.keyboards.inline import *
@@ -9,6 +10,7 @@ from core.keyboards.reply import *
 from core.utils.session_db import *
 from core.utils.connect_db import *
 from core.handlers.basic import set_default_commands
+from core.utils.graph import admin_graph
 
 
 @flags.chat_action("typing")
@@ -17,7 +19,6 @@ async def cmd_start(message: Message, bot: Bot):
     await set_default_commands(bot)
     with create_session() as db:
         users = [user[0] for user in db.query(User.id).all()]
-        print(users)
         if message.from_user.id not in users:
             await message.answer(
                 f'Привет, ***{message.from_user.first_name}*** \U0001F609 !\n'
@@ -211,13 +212,18 @@ async def unknown_message_text(message: Message):
         await message.reply(f'\U0001F915 Страна или регион указан неверно!')
 
 
-# @flags.chat_action("send_file")
-# async def send_graph(message: Message, bot: Bot):
-#     await bot.send_photo(
-#         chat_id=message.chat.id,
-#         photo=f'Graph\\{message.text}\\{datetime.now()-timedelta(days=1)}.png',
-#         caption=f'График погоды города - <b>{message.text}</b> за <b>{datetime.now() - timedelta(days=1)}</b>'
-#     )
+@flags.chat_action("upload_photo")
+async def send_graph_admin(message: Message, bot: Bot):
+    city = message.text[7::]
+    admin_graph(city)
+    try:
+        await bot.send_photo(
+            chat_id=message.chat.id,
+            photo=FSInputFile(f'Graph\\{city}\\{datetime.now().date()}.png'),
+            caption=f'График погоды города - <b>{city}</b> за <b>{datetime.now().date()}</b>'
+        )
+    except TelegramNetworkError:
+        await message.answer('График еще не готов ☠')
 
 
 @flags.chat_action("typing")

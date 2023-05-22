@@ -19,6 +19,7 @@ from core.utils.graph import *
 
 
 async def start():
+    # '6178245829:AAGwMAb-dPju3eSoNRBT8n3pxRPoFISuMLA'
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
     dp = Dispatcher()
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
@@ -28,10 +29,11 @@ async def start():
                "(%(filename)s).%(funcName)s(%(lineno)d) - %(message)s")
 
     # Сообщения по расписанию
-    scheduler.add_job(alerts_message, trigger='cron', hour='07', minute='00', start_date=dt.now(), kwargs={'bot':bot})
-    scheduler.add_job(alerts_message, trigger='cron', hour='13', minute='00', start_date=dt.now(), kwargs={'bot':bot})
-    scheduler.add_job(alerts_message, trigger='cron', hour='17', minute='00', start_date=dt.now(), kwargs={'bot':bot})
-    scheduler.add_job(cmd_message, trigger='interval', days=1, next_run_time=dt.now(), kwargs={'bot':bot})
+    scheduler.add_job(alerts_message, trigger='cron', hour='07', minute='00', start_date=dt.now(), kwargs={'bot': bot})
+    scheduler.add_job(alerts_message, trigger='cron', hour='13', minute='00', start_date=dt.now(), kwargs={'bot': bot})
+    scheduler.add_job(alerts_message, trigger='cron', hour='17', minute='00', start_date=dt.now(), kwargs={'bot': bot})
+    scheduler.add_job(cmd_message, trigger='interval', days=1, next_run_time=dt.now()+timedelta(days=2),
+                      kwargs={'bot': bot})
 
     # Сбор статистики
     scheduler.add_job(temperature_graph, trigger='cron', hour='00', minute='00', start_date=dt.now())
@@ -53,6 +55,7 @@ async def start():
     dp.message.register(cmd_manage, Command(commands=['manage']))
     dp.message.register(cmd_message, IsAdmin() and Command(commands=['message']))
     dp.message.register(call_alerts_message, IsAdmin() and Command(commands=['alerts']))
+    dp.message.register(send_graph_admin, IsAdmin() and Command(commands=['graph']))
     dp.message.register(weather, F.text.lower() == 'погода')
     dp.message.register(second_step_alert, F.text and StateAlerts.subscribe)
     dp.message.register(set_city, F.text and StateSet.city)
@@ -67,7 +70,6 @@ async def start():
     dp.callback_query.register(send_graph, F.data.startswith('graph_'))
     dp.callback_query.register(kb_set, F.data.startswith('kb_') and StateSet.city)
     dp.callback_query.register(call_alerts, F.data.startswith('alerts_'))
-
     try:
         global_init('DataBase.db')
         scheduler.start()
