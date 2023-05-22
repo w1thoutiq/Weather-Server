@@ -43,8 +43,8 @@ def graph_keyboard(cities):
     markup = InlineKeyboardBuilder()
     for city in cities:
         markup.add(InlineKeyboardButton(text=city, callback_data=f'graph_{city}'))
-    markup.adjust(1)
     markup.add(InlineKeyboardButton(text=f'Назад', callback_data=f'weather_cancel'))
+    markup.adjust(1)
     return markup.as_markup()
 
 
