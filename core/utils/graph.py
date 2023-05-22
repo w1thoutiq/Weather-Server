@@ -61,8 +61,8 @@ def save_data():
 
 
 def admin_graph(ct: str):
-    ct = ct.capitalize()
     with create_session() as db:
+        city = ct.capitalize()
         temp = [i if i is not None else 'None' for i in db.query(
             AlertGraph.am12,
             AlertGraph.am1,
@@ -88,7 +88,7 @@ def admin_graph(ct: str):
             AlertGraph.pm9,
             AlertGraph.pm10,
             AlertGraph.pm11
-        ).where(AlertGraph.city == ct).all()[0]]
+        ).where(AlertGraph.city == city).all()[0]]
         y = []
         while True:
             try:
@@ -98,8 +98,8 @@ def admin_graph(ct: str):
         y.extend(temp)
         x = list(range(len(y)))
         try:
-            file_name = f'Graph\\{ct}\\{dt.now().date()}.png'
-            os.mkdir(f'Graph\\{ct}\\')
+            file_name = f'Graph\\{city}\\{dt.now().date()}.png'
+            os.mkdir(f'Graph\\{city}\\')
             fig = plt.figure()
             plt.plot(x, y)
             fig.savefig(file_name, dpi=150)
