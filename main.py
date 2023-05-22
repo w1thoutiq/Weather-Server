@@ -31,8 +31,6 @@ async def start():
     scheduler.add_job(alerts_message, trigger='cron', hour='07', minute='00', start_date=dt.now(), kwargs={'bot': bot})
     scheduler.add_job(alerts_message, trigger='cron', hour='13', minute='00', start_date=dt.now(), kwargs={'bot': bot})
     scheduler.add_job(alerts_message, trigger='cron', hour='17', minute='00', start_date=dt.now(), kwargs={'bot': bot})
-    scheduler.add_job(cmd_message, trigger='interval', days=1, next_run_time=dt.now()+timedelta(days=2),
-                      kwargs={'bot': bot})
 
     # Сбор статистики
     scheduler.add_job(temperature_graph, trigger='cron', hour='00', minute='00', start_date=dt.now())
