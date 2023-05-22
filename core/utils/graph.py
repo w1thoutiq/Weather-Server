@@ -120,7 +120,6 @@ def get_city_set():
         city_set.remove('')
     except KeyError:
         pass
-    print(city_set)
     return city_set
 
 
