@@ -103,7 +103,7 @@ def admin_graph(ct: str):
             fig = plt.figure()
             plt.plot(x, y)
             fig.savefig(file_name, dpi=150)
-        except [FileExistsError, FileNotFoundError]:
+        except:
             warnings.simplefilter("ignore", UserWarning)
             figure = plt.figure()
             plt.plot(x, y)
