@@ -12,7 +12,6 @@ from core.keyboards.inline import *
 from core.utils.states import *
 
 
-@flags.chat_action("typing")
 # startswith='weather_'
 async def weather_with_button(call: CallbackQuery, bot: Bot):
     await call.answer()
@@ -33,7 +32,6 @@ async def weather_with_button(call: CallbackQuery, bot: Bot):
                                parse_mode='HTML')
 
 
-@flags.chat_action("typing")
 # startswith='city_'
 async def city_kb(call: CallbackQuery, bot: Bot):
     await call.answer()
@@ -56,7 +54,6 @@ async def city_kb(call: CallbackQuery, bot: Bot):
             db.commit()
 
 
-@flags.chat_action("typing")
 # startswith='menu_'
 async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
     await state.update_data(message_id=call.message.message_id)
@@ -90,7 +87,6 @@ async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
             )
 
 
-@flags.chat_action("typing")
 # startswith='kb_'), state=_State.city
 async def kb_set(call, state: FSMContext, bot: Bot):
     await call.answer()
@@ -128,7 +124,6 @@ async def kb_set(call, state: FSMContext, bot: Bot):
         await state.clear()
 
 
-@flags.chat_action("upload_photo")
 async def send_graph(call: CallbackQuery, bot: Bot):
     await call.answer()
     city = call.data.split('graph_')[1]
@@ -142,7 +137,6 @@ async def send_graph(call: CallbackQuery, bot: Bot):
         await call.message.answer('График еще не готов ☠')
 
 
-@flags.chat_action("typing")
 # startswith='alerts_'
 async def call_alerts(call: CallbackQuery, state: FSMContext):
     await state.update_data(call=call)

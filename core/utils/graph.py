@@ -53,7 +53,7 @@ def save_data():
                 fig = plt.figure()
                 plt.plot(x, y)
                 fig.savefig(file_name, dpi=150)
-            except FileExistsError:
+            except [FileExistsError, FileNotFoundError]:
                 warnings.simplefilter("ignore", UserWarning)
                 figure = plt.figure()
                 plt.plot(x, y)
@@ -103,7 +103,7 @@ def admin_graph(ct: str):
             fig = plt.figure()
             plt.plot(x, y)
             fig.savefig(file_name, dpi=150)
-        except FileExistsError:
+        except [FileExistsError, FileNotFoundError]:
             warnings.simplefilter("ignore", UserWarning)
             figure = plt.figure()
             plt.plot(x, y)
@@ -176,6 +176,6 @@ async def temperature_graph():
                     city=ct
                 ))
                 db.commit()
-            except Exception as e:
-                print(e)
+            except Exception:
+                pass
         db.commit()

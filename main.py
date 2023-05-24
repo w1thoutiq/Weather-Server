@@ -53,6 +53,7 @@ async def start():
     dp.message.register(cmd_message, IsAdmin() and Command(commands=['message']))
     dp.message.register(call_alerts_message, IsAdmin() and Command(commands=['alerts']))
     dp.message.register(send_graph_admin, IsAdmin() and Command(commands=['graph']))
+    dp.message.register(upload_database, IsAdmin() and Command(commands=['db']))
     dp.message.register(weather, F.text.lower() == 'погода')
     dp.message.register(second_step_alert, F.text and StateAlerts.subscribe)
     dp.message.register(set_city, F.text and StateSet.city)
@@ -73,6 +74,7 @@ async def start():
         await dp.start_polling(bot)
     finally:
         await bot.session.close()
+
 
 if __name__ == '__main__':
     asyncio.run(start())
