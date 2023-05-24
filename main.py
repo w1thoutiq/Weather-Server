@@ -34,7 +34,8 @@ async def start():
 
     # Сбор статистики
     scheduler.add_job(temperature_graph, trigger='cron', hour='00', minute='00', start_date=dt.now())
-    scheduler.add_job(save_data, trigger='cron', hour='23', minute='58', start_date=dt.now())
+    scheduler.add_job(save_data, trigger='cron', hour='23', minute='59', start_date=dt.now())
+    scheduler.add_job(warning_database, trigger='cron', hour='23', minute='58', start_date=dt.now())
     scheduler.add_job(graph, trigger='interval', hours=1, next_run_time=dt.now()+timedelta(seconds=5))
 
     # Функции для запуска и завершения работы бота

@@ -1,6 +1,7 @@
+from aiogram.exceptions import TelegramNetworkError
 from requests import get
 from aiogram import Bot
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, FSInputFile
 from datetime import datetime
 
 from core.settings import settings
@@ -10,6 +11,20 @@ from core.keyboards.reply import *
 from core.utils.session_db import *
 from core.utils.connect_db import *
 from aiogram import flags
+
+
+async def warning_database(bot: Bot):
+    try:
+        await bot.send_document(
+            chat_id=settings.bots.admin_id,
+            document=FSInputFile(f'DataBase.db'),
+            caption=f'Ваша база данных'
+        )
+    except TelegramNetworkError:
+        await bot.send_message(
+            chat_id=settings.bots.admin_id,
+            text='Что-то пошло не так'
+        )
 
 
 @flags.chat_action("typing")
