@@ -18,12 +18,12 @@ async def warning_database(bot: Bot):
         await bot.send_document(
             chat_id=settings.bots.admin_id,
             document=FSInputFile(f'DataBase.db'),
-            caption=f'Ваша база данных'
+            caption=f'{datetime.now().date()}'
         )
     except TelegramNetworkError:
         await bot.send_message(
             chat_id=settings.bots.admin_id,
-            text='Что-то пошло не так'
+            text='Что-то не так с базой данных'
         )
 
 
@@ -102,8 +102,7 @@ async def alerts_message(bot: Bot):
                     count += 1
                     db.query(User).where(User.id == user).update(
                         {User.active: True})
-                except Exception as e:
-                    print(e, 'in alerts')
+                except:
                     db.query(User).where(User.id == user).update(
                         {User.active: False})
     finally:

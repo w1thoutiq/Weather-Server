@@ -1,6 +1,6 @@
-import os
 import warnings
 
+from os import makedirs
 from datetime import datetime as dt
 
 from core.utils.session_db import create_session
@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 def save_data():
     with create_session() as db:
         for ct in get_city_set():
+            ct = str(ct)
             temp = [i if i is not None else 'None' for i in db.query(
                 AlertGraph.am12,
                 AlertGraph.am1,
@@ -42,22 +43,23 @@ def save_data():
             while True:
                 try:
                     temp.remove('None')
-                except Exception as e:
-                    e.__str__()
+                except ValueError:
                     break
             y.extend(temp)
             x = list(range(len(y)))
             try:
                 file_name = f'Graph\\{ct}\\{dt.now().date()}.png'
-                os.mkdir(f'Graph\\{ct}\\')
+                makedirs(f'Graph\\{ct}')
                 fig = plt.figure()
                 plt.plot(x, y)
                 fig.savefig(file_name, dpi=150)
-            except [FileExistsError, FileNotFoundError]:
+            except FileExistsError as e:
                 warnings.simplefilter("ignore", UserWarning)
                 figure = plt.figure()
                 plt.plot(x, y)
                 figure.savefig(file_name, dpi=150)
+            finally:
+                plt.close()
 
 
 def admin_graph(ct: str):
@@ -98,16 +100,18 @@ def admin_graph(ct: str):
         y.extend(temp)
         x = list(range(len(y)))
         try:
-            file_name = f'Graph\\{city}\\{dt.now().date()}.png'
-            os.mkdir(f'Graph\\{city}\\')
+            file_name = f'Grap\\{city}\\{dt.now().date()}.png'
+            makedirs(f'Graph\\{city}')
             fig = plt.figure()
             plt.plot(x, y)
             fig.savefig(file_name, dpi=150)
-        except:
+        except FileExistsError:
             warnings.simplefilter("ignore", UserWarning)
             figure = plt.figure()
             plt.plot(x, y)
             figure.savefig(file_name, dpi=150)
+        finally:
+            plt.close()
 
 
 def get_city_set():
@@ -176,6 +180,6 @@ async def temperature_graph():
                     city=ct
                 ))
                 db.commit()
-            except Exception:
+            except:
                 pass
         db.commit()
