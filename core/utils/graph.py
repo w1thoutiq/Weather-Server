@@ -100,7 +100,7 @@ def admin_graph(ct: str):
         y.extend(temp)
         x = list(range(len(y)))
         try:
-            file_name = f'Grap\\{city}\\{dt.now().date()}.png'
+            file_name = f'Graph\\{city}\\{dt.now().date()}.png'
             makedirs(f'Graph\\{city}')
             fig = plt.figure()
             plt.plot(x, y)
