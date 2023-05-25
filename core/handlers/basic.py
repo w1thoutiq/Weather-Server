@@ -23,8 +23,7 @@ async def shutting_off(bot: Bot):
         await bot.send_document(
             chat_id=settings.bots.admin_id,
             document=FSInputFile(f'DataBase.db'),
-            caption=f'Аварийная база данных',
-            disable_notification=True
+            caption=f'Аварийная база данных'
         )
     except TelegramNetworkError:
         await bot.send_message(
