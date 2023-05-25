@@ -1,5 +1,6 @@
 from aiogram import Bot
-from aiogram.types import BotCommand, BotCommandScopeDefault
+from aiogram.exceptions import TelegramNetworkError
+from aiogram.types import BotCommand, BotCommandScopeDefault, FSInputFile
 from core.settings import settings
 
 
@@ -13,10 +14,22 @@ async def startup(bot: Bot):
 
 
 async def shutting_off(bot: Bot):
-    return await bot.send_message(
+    await bot.send_message(
         chat_id=settings.bots.admin_id,
         text="Бот выключен!",
     )
+    try:
+        await bot.send_document(
+            chat_id=settings.bots.admin_id,
+            document=FSInputFile(f'DataBase.db'),
+            caption=f'Ваша база данных'
+        )
+    except TelegramNetworkError:
+        await bot.send_message(
+            chat_id=settings.bots.admin_id,
+            text='База данных не отправилась'
+        )
+
 
 
 async def set_default_commands(bot: Bot):
