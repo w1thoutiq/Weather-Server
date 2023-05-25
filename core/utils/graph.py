@@ -53,7 +53,7 @@ def save_data():
                 fig = plt.figure()
                 plt.plot(x, y)
                 fig.savefig(file_name, dpi=150)
-            except FileExistsError as e:
+            except FileExistsError:
                 warnings.simplefilter("ignore", UserWarning)
                 figure = plt.figure()
                 plt.plot(x, y)
@@ -160,7 +160,8 @@ def graph():
     time = str(dt.now().hour)
     with create_session() as db:
         for ct in get_city_set():
-            if db.query(AlertGraph).where(AlertGraph.city == str(ct)).first() is None:
+            if db.query(AlertGraph).where(
+                    AlertGraph.city == str(ct)).first() is None:
                 db.add(AlertGraph(city=ct))
                 db.commit()
             db.query(AlertGraph).where(AlertGraph.city == str(ct)).update(

@@ -1,10 +1,6 @@
 from datetime import timedelta
 
-import aiogram
-from aiogram import Bot
-from aiogram.exceptions import TelegramNetworkError
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, FSInputFile
 
 from core.utils.graph import get_city_set
 from core.utils.simple_func import *
@@ -41,16 +37,19 @@ async def city_kb(call: CallbackQuery, bot: Bot):
                                  chat_id=call.from_user.id)
     else:
         with create_session() as db:
-            cities = db.query(User.city).where(User.id == int(call.from_user.id)).first()[0].replace(city + ', ', '')
+            cities = db.query(User.city).where(
+                User.id == int(call.from_user.id)
+            ).first()[0].replace(city + ', ', '')
             db.query(User).where(User.id == int(call.from_user.id)).update(
                 {User.city: cities}
             )
             cities = cities.split(', ')
-            await bot.edit_message_text(message_id=call.message.message_id,
-                                        chat_id=call.from_user.id,
-                                        text=f'Вы удалили регион {city}\n'
-                                             f'Какой еще регион хотите удалить?',
-                                        reply_markup=get_button_with_city(cities))
+            await bot.edit_message_text(
+                message_id=call.message.message_id,
+                chat_id=call.from_user.id,
+                text=f'Вы удалили регион {city}\n'
+                     f'Какой еще регион хотите удалить?',
+                reply_markup=get_button_with_city(cities))
             db.commit()
 
 
@@ -61,7 +60,9 @@ async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
     action = call.data.split('menu_')[1]
     with create_session() as db:
         if action == 'change':
-            city = db.query(User.city).where(User.id == int(call.from_user.id)).first()[0].split(', ')
+            city = db.query(User.city).where(
+                User.id == int(call.from_user.id)
+            ).first()[0].split(', ')
             await bot.send_message(chat_id=call.from_user.id,
                                    text=f'Ваши регионы:',
                                    reply_markup=get_button_with_city(city))
@@ -74,12 +75,20 @@ async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
             await my_city(call, bot=bot)
         elif action == 'alerts':
             if db.query(Alert).where(Alert.id == call.from_user.id).first():
-                await call.message.edit_text(text="Меню рассылки:\n\r<strong>Вы подписаны</strong> \U00002705",                                             reply_markup=menu_of_alerts(),
-                                             parse_mode='HTML')
-            elif db.query(Alert).where(Alert.id == call.from_user.id).first() is None:
-                await call.message.edit_text(text="Меню рассылки:\n\r<strong>Вы не подписаны</strong> \U0000274C",
-                                             reply_markup=menu_of_alerts(),
-                                             parse_mode='HTML')
+                await call.message.edit_text(
+                    text="Меню рассылки:\n\r"
+                         "<strong>Вы подписаны</strong> \U00002705",
+                    reply_markup=menu_of_alerts(),
+                    parse_mode='HTML')
+            elif db.query(Alert).where(
+                    Alert.id == call.from_user.id
+            ).first() is None:
+                await call.message.edit_text(
+                    text="Меню рассылки:\n\r"
+                         "<strong>Вы не подписаны</strong> \U0000274C",
+                    reply_markup=menu_of_alerts(),
+                    parse_mode='HTML'
+                )
         elif action == 'graph':
             await call.message.answer(
                 'Выбери регион',
@@ -95,7 +104,9 @@ async def kb_set(call, state: FSMContext, bot: Bot):
     city = data.get('city') + ', '
     with create_session() as db:
         if action == 'add':
-            cities = db.query(User.city).where(User.id == int(call.from_user.id)).first()[0]
+            cities = db.query(User.city).where(
+                User.id == int(call.from_user.id)
+            ).first()[0]
             if city in cities:
                 await bot.edit_message_text(
                     chat_id=call.from_user.id,
@@ -117,9 +128,10 @@ async def kb_set(call, state: FSMContext, bot: Bot):
             db.query(User).where(User.id == int(call.from_user.id)).update({
                     User.city: city, User.active: True
                 })
-            await bot.edit_message_text(chat_id=call.from_user.id,
-                                        message_id=call.message.message_id,
-                                        text=f'Город установлен!\nВаш регион: {city[:-2:]}')
+            await bot.edit_message_text(
+                chat_id=call.from_user.id,
+                message_id=call.message.message_id,
+                text=f'Город установлен!\nВаш регион: {city[:-2:]}')
         db.commit()
         await state.clear()
 
@@ -130,11 +142,14 @@ async def send_graph(call: CallbackQuery, bot: Bot):
     try:
         await bot.send_photo(
             chat_id=call.message.chat.id,
-            photo=FSInputFile(f'Graph\\{city}\\{datetime.now().date()-timedelta(days=1)}.png'),
-            caption=f'График погоды города - <b>{city}</b> за <b>{datetime.now().date()-timedelta(days=1)}</b>'
+            photo=FSInputFile(
+                f'Graph\\{city}\\{datetime.now().date()-timedelta(days=1)}.png'
+            ),
+            caption=f'График погоды города - <b>{city}</b>'
+                    f' за <b>{datetime.now().date()-timedelta(days=1)}</b>'
         )
     except TelegramNetworkError:
-        await call.message.answer('График еще не готов ☠')
+        await call.message.answer('График не найден 😐')
 
 
 # startswith='alerts_'
@@ -146,7 +161,10 @@ async def call_alerts(call: CallbackQuery, state: FSMContext):
         with create_session() as db:
             db.query(Alert).where(Alert.id == int(call.from_user.id)).delete()
             db.commit()
-        await call.message.edit_text(text='Удалил вас из рассылки', reply_markup=menu())
+        await call.message.edit_text(
+            text='Удалил вас из рассылки',
+            reply_markup=menu()
+        )
     elif action == 'subscribe':
         await call.message.edit_text(text=f'Отправь регион для рассылки')
         await state.set_state(StateAlerts.subscribe)

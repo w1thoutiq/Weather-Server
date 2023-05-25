@@ -1,7 +1,6 @@
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, FSInputFile
-from aiogram.exceptions import TelegramNetworkError, TelegramBadRequest
-from aiogram import Bot
+from aiogram.exceptions import TelegramBadRequest
+from aiogram.types import Message
 
 from core.utils.simple_func import *
 from core.keyboards.inline import *
@@ -26,13 +25,15 @@ async def cmd_start(message: Message, bot: Bot):
                 f'\nИли пропишите команду /help.\n',
                 parse_mode='Markdown',
                 reply_markup=mark())
-            await bot.send_message(message.chat.id,
-                                   f'Вижу ты тут впервые, '
-                                   f'напишите "/manage" для того что бы установить регион'
-                                   f' для получения погоды.'
-                                   f'\nТак же ты можешь написать любой регион, '
-                                   f'а я отправлю погоду в этом регионе \U000026C5',
-                                   parse_mode='')
+            await bot.send_message(
+                message.chat.id,
+                f'Вижу ты тут впервые, '
+                f'напишите "/manage" для того что бы установить регион'
+                f' для получения погоды.'
+                f'\nТак же ты можешь написать любой регион, '
+                f'а я отправлю погоду в этом регионе \U000026C5',
+                parse_mode=''
+            )
             db.add(User(
                 id=message.from_user.id,
                 username=message.from_user.username,
@@ -51,7 +52,8 @@ async def cmd_start(message: Message, bot: Bot):
                 'Если у тебя уже выставлен регион просто нажми "Погода"',
                 reply_markup=get_weather_button())
             db.query(User).where(User.id == message.from_user.id).update(
-                {User.active: True})
+                {User.active: True}
+            )
         db.commit()
 
 
@@ -68,7 +70,7 @@ async def cmd_help(message: [Message, CallbackQuery], bot: Bot):
             message.message.chat.id,
             text=text,
             parse_mode='',
-            reply_markup=get_weather_button())  # Этот текст получит пользователь
+            reply_markup=get_weather_button())
     elif type(message) is Message:
         await bot.send_message(
             message.chat.id,
@@ -106,7 +108,9 @@ async def cmd_message(message: Message, bot: Bot):
         users = [int(user[0]) for user in db.query(User.id).all()]
         for user in users:
             try:
-                await get_weather_for_cities(user_id=user, bot=bot, chat_id=user)
+                await get_weather_for_cities(
+                    user_id=user, bot=bot, chat_id=user
+                )
                 if db.query(User.active).where(User.id == user) is False:
                     db.query(User).where(User.id == user).update(
                         {User.active: True})
@@ -126,9 +130,10 @@ async def cmd_message(message: Message, bot: Bot):
 
 @flags.chat_action('typing')
 # Функция для обработки текста "Погода"
-async def weather(message: Message):  # Выводим данные погоды для установленного города
+async def weather(message: Message):
     with create_session() as db:
-        cities = db.query(User.city).where(User.id == int(message.from_user.id)).first()[0].split(', ')
+        cities = db.query(User.city).where(
+            User.id == int(message.from_user.id)).first()[0].split(', ')
     await message.answer(text='Для какого региона показать погоду?',
                          reply_markup=weather_btn(cities))
 
@@ -151,19 +156,22 @@ async def second_step_alert(message: Message, state: FSMContext):
             try:  # Обработка ошибки если такого региона не существует
                 if get_weather(city) is None:
                     raise ValueError
-                if db.query(Alert).where(Alert.id == int(message.from_user.id)).first() is None:
+                if db.query(Alert).where(
+                        Alert.id == int(message.from_user.id)).first() is None:
                     db.add(Alert(
                         id=message.from_user.id,
                         username=message.from_user.username,
                         city=city
                     ))
                 else:
-                    db.query(Alert).where(Alert.id == int(message.from_user.id)).update(
+                    db.query(Alert).where(
+                        Alert.id == int(message.from_user.id)).update(
                         {
                             Alert.id: message.from_user.id,
                             Alert.city: city,
                             Alert.username: message.from_user.username
-                        })
+                        }
+                    )
                 data = await state.get_data()
                 call = data.get('call')
                 await call.message.edit_text(
@@ -192,10 +200,15 @@ async def set_city(message: Message, state: FSMContext):
             if get_weather(city) is None:
                 raise ValueError
             await state.update_data(city=city)
-            await message.answer(text=f'Что ты хочешь сделать с этим регионом?', reply_markup=add_city_menu())
+            await message.answer(f'Что ты хочешь сделать с этим регионом?',
+                                 reply_markup=add_city_menu()
+                                 )
         except ValueError:
-            await message.reply(f'Что-то пошло не так! \U0001F915'
-                                f'\nНапишите "отмена", если передумали', reply_markup=cancel())
+            await message.reply(
+                f'Что-то пошло не так! \U0001F915'
+                f'\nНапишите "отмена", если передумали',
+                reply_markup=cancel()
+                                )
 
 
 @flags.chat_action('typing')
@@ -219,7 +232,8 @@ async def send_graph_admin(message: Message, bot: Bot):
         await bot.send_photo(
             chat_id=message.chat.id,
             photo=FSInputFile(f'Graph\\{city}\\{datetime.now().date()}.png'),
-            caption=f'График погоды города - <b>{city}</b> за <b>{datetime.now().date()}</b>'
+            caption=f'График погоды города - <b>{city}</b> за'
+                    f' <b>{datetime.now().date()}</b>'
         )
     except TelegramNetworkError:
         await message.answer('График еще не готов ☠')
