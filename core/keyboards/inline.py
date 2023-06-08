@@ -46,7 +46,9 @@ def menu():
     markup.add(InlineKeyboardButton
                (text='Рассылка', callback_data='menu_alerts'))
     markup.add(InlineKeyboardButton(
-        text='Мониторинг погоды', callback_data='menu_graph'))
+        text='Прогноз погоды', callback_data='menu_prediction'))
+    # markup.add(InlineKeyboardButton(
+    #     text='Мониторинг погоды', callback_data='menu_graph'))
     markup.adjust(2)
     return markup.as_markup()
 
@@ -85,4 +87,13 @@ def mark():
     markup.add(InlineKeyboardButton(
         text='help', callback_data='help'
     ))  # Добавляем кнопку help
+    return markup.as_markup()
+
+
+def prediction_menu():
+    markup = InlineKeyboardBuilder()
+    markup.button(text='До конца дня', callback_data='prediction_today')
+    markup.button(text='На завтра', callback_data='prediction_tomorrow')
+    markup.button(text=f'Назад', callback_data=f'alerts_cancel')
+    markup.adjust(2)
     return markup.as_markup()

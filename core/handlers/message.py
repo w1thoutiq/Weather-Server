@@ -1,23 +1,28 @@
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.types import Message
+from aiogram import Router, F
 
-from core.utils.simple_func import *
+
+from core.utils.other import *
 from core.keyboards.inline import *
 from core.keyboards.reply import *
 from core.utils.session_db import *
 from core.utils.connect_db import *
 from core.handlers.basic import set_default_commands
 from core.utils.graph import admin_graph
+from core.middlewares.filters import IsAdmin
+from core.utils.states import StateAlerts, StateSet
+
+router = Router()
 
 
-@flags.chat_action('typing')
-# Функция для обработки /start
+@router.message(Command(commands=['start']))
 async def cmd_start(message: Message, bot: Bot):
     await set_default_commands(bot)
     with create_session() as db:
         users = [user[0] for user in db.query(User.id).all()]
-        if message.from_user.id not in users:
+        if message.from_user.id in users:
             await message.answer(
                 f'Привет, ***{message.from_user.first_name}*** \U0001F609 !\n'
                 f'Я Telegram-бот для получения погоды в любом регионе. '
@@ -57,8 +62,8 @@ async def cmd_start(message: Message, bot: Bot):
         db.commit()
 
 
-@flags.chat_action('typing')
-# Функция для обработки /help
+@router.callback_query(F.data == 'help')
+@router.message(Command(commands=['help']))
 async def cmd_help(message: [Message, CallbackQuery], bot: Bot):
     text = f'Я понимаю эти команды:\n'\
            f'/start\n/help\n/developer\n/manage\n'\
@@ -83,14 +88,12 @@ async def cmd_help(message: [Message, CallbackQuery], bot: Bot):
         db.commit()
 
 
-@flags.chat_action('typing')
-# Функция для обработки /manage
+@router.message(Command(commands=['manage']))
 async def cmd_manage(message: Message):
     await message.answer(text=f'Выберите опцию:', reply_markup=menu())
 
 
-@flags.chat_action('typing')
-# Функция для обработки /developer
+@router.message(Command(commands=['support']))
 async def cmd_developer(message: Message, bot: Bot):
     await bot.send_message(
         message.chat.id,
@@ -99,8 +102,7 @@ async def cmd_developer(message: Message, bot: Bot):
     )
 
 
-@flags.chat_action('typing')
-# Функция для обработки /message
+@router.message(IsAdmin(), Command('message'))
 async def cmd_message(message: Message, bot: Bot):
     count_right = 0
     count_left = 0
@@ -115,7 +117,7 @@ async def cmd_message(message: Message, bot: Bot):
                     db.query(User).where(User.id == user).update(
                         {User.active: True})
                 count_right += 1
-            except TelegramBadRequest:
+            except Exception:
                 count_left += 1
                 db.query(User).where(User.id == user).update(
                     {User.active: False})
@@ -128,24 +130,51 @@ async def cmd_message(message: Message, bot: Bot):
         )
 
 
-@flags.chat_action('typing')
-# Функция для обработки текста "Погода"
+@router.message(F.text.lower() == 'погода')
 async def weather(message: Message):
-    with create_session() as db:
-        cities = db.query(User.city).where(
-            User.id == int(message.from_user.id)).first()[0].split(', ')
-    await message.answer(text='Для какого региона показать погоду?',
-                         reply_markup=weather_btn(cities))
+    try:
+        with create_session() as db:
+            cities = db.query(User.city).where(
+                User.id == int(message.from_user.id)).first()[0].split(', ')
+        await message.answer(text='Для какого региона показать погоду?',
+                             reply_markup=weather_btn(cities))
+    except TypeError:
+        await message.answer("Нет установленных регионов")
 
 
-@flags.chat_action('typing')
+@router.message(IsAdmin(), Command('alerts'))
 async def call_alerts_message(message: Message, bot: Bot):
     await message.answer('Начинаю рассылку')
     await alerts_message(bot=bot)
 
 
-@flags.chat_action('typing')
-# state=StateAlerts.subscribe
+@router.message(IsAdmin(), Command('graph'))
+async def send_graph_admin(message: Message, bot: Bot):
+    city = message.text[7::].capitalize()
+    admin_graph(city)
+    try:
+        await bot.send_photo(
+            chat_id=message.chat.id,
+            photo=FSInputFile(f'Graph\\{city}\\{datetime.now().date()}.png'),
+            caption=f'График погоды города - <b>{city}</b> за'
+                    f' <b>{datetime.now().date()}</b>'
+        )
+    except TelegramNetworkError:
+        await message.answer('График еще не готов ☠')
+
+
+@router.message(IsAdmin(), Command(commands=['db']))
+@flags.chat_action('upload_document')
+async def upload_database(message: Message):
+    try:
+        await message.answer_document(
+            document=FSInputFile(f'DataBase.db'),
+        )
+    except TelegramNetworkError:
+        await message.answer('Что-то пошло не так')
+
+
+@router.message(F.text and StateAlerts.subscribe)
 async def second_step_alert(message: Message, state: FSMContext):
     if message.text.lower() == 'отмена':
         await state.clear()
@@ -154,14 +183,16 @@ async def second_step_alert(message: Message, state: FSMContext):
         with create_session() as db:
             city = message.text.capitalize()
             try:  # Обработка ошибки если такого региона не существует
-                if get_weather(city) is None:
+                checkout = get_weather(city, timezone=True)
+                if checkout is None:
                     raise ValueError
                 if db.query(Alert).where(
                         Alert.id == int(message.from_user.id)).first() is None:
                     db.add(Alert(
                         id=message.from_user.id,
                         username=message.from_user.username,
-                        city=city
+                        city=city,
+                        timezone=checkout
                     ))
                 else:
                     db.query(Alert).where(
@@ -169,7 +200,8 @@ async def second_step_alert(message: Message, state: FSMContext):
                         {
                             Alert.id: message.from_user.id,
                             Alert.city: city,
-                            Alert.username: message.from_user.username
+                            Alert.username: message.from_user.username,
+                            Alert.timezone: checkout
                         }
                     )
                 data = await state.get_data()
@@ -180,16 +212,17 @@ async def second_step_alert(message: Message, state: FSMContext):
                 )
                 await state.clear()
             except ValueError:
-                await message.reply(f'Что-то пошло не так! \U0001F915'
-                                    f'\nНапишите "отмена", если передумали',
-                                    reply_markup=cancel())
+                await message.answer(
+                    f'Что-то пошло не так! \U0001F915'
+                    f'\nНапишите "отмена", если передумали',
+                    reply_markup=cancel()
+                )
             finally:
                 db.commit()
                 await message.delete()
 
 
-@flags.chat_action('typing')
-# state=StateSet.city
+@router.message(F.text and StateSet.city)
 async def set_city(message: Message, state: FSMContext):
     if message.text.lower() == 'отмена':
         await state.clear()
@@ -211,7 +244,7 @@ async def set_city(message: Message, state: FSMContext):
                                 )
 
 
-@flags.chat_action('typing')
+@router.message(F.text)
 # Обработка любого текста, если есть город, тогда вернет погоду пользователю
 async def unknown_message_text(message: Message):
     try:
@@ -224,33 +257,7 @@ async def unknown_message_text(message: Message):
         await message.reply(f'\U0001F915 Страна или регион указан неверно!')
 
 
-@flags.chat_action('upload_photo')
-async def send_graph_admin(message: Message, bot: Bot):
-    city = message.text[7::].capitalize()
-    admin_graph(city)
-    try:
-        await bot.send_photo(
-            chat_id=message.chat.id,
-            photo=FSInputFile(f'Graph\\{city}\\{datetime.now().date()}.png'),
-            caption=f'График погоды города - <b>{city}</b> за'
-                    f' <b>{datetime.now().date()}</b>'
-        )
-    except TelegramNetworkError:
-        await message.answer('График еще не готов ☠')
-
-
-@flags.chat_action('upload_document')
-async def upload_database(message: Message):
-    try:
-        await message.answer_document(
-            document=FSInputFile(f'DataBase.db'),
-            caption=f'Ваша база данных'
-        )
-    except TelegramNetworkError:
-        await message.answer('Что-то пошло не так')
-
-
-@flags.chat_action('typing')
+@router.message()
 # Обработка любого типа сообщений, что-бы избежать лишних ошибок
 async def unknown_message(message: Message):
     await message.reply(f'Я не знаю что с этим делать, но напоминаю,\n'

@@ -2,7 +2,7 @@ from aiogram.exceptions import TelegramNetworkError
 from requests import get
 from aiogram import Bot
 from aiogram.types import CallbackQuery, FSInputFile
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from core.settings import settings
 # from core.utils.database import *
@@ -70,7 +70,7 @@ async def get_weather_for_cities(user_id: int, bot: Bot, chat_id: int):
     return
 
 
-def get_weather(city, for_graph=False):
+def get_weather(city, for_graph=False, timezone: bool = False):
     try:
         url = 'https://api.openweathermap.org/data/2.5/weather'
         api_of_weather = '352c751a80237a51813f0ae93d864822'
@@ -81,6 +81,8 @@ def get_weather(city, for_graph=False):
         result = get(url, params=params).json()
         info = result['main']['temp'], result['main']['feels_like'],\
             result['weather'][0]['description'], result['name']
+        if timezone:
+            return result.get('timezone')
         if for_graph is True:
             return info[0]
         message_text = f'Погода в регионе <strong>{info[3]}</strong>:\n' \
@@ -93,31 +95,23 @@ def get_weather(city, for_graph=False):
 
 @flags.chat_action("typing")
 async def alerts_message(bot: Bot):
-    count = 0
     try:
         with create_session() as db:
             users = [int(user[0]) for user in db.query(Alert.id).all()]
             for user in users:
                 try:
-                    city = db.query(Alert.city).where(
-                        Alert.id == user
-                    ).first()[0]
-                    await bot.send_message(
-                        chat_id=user,
-                        text=get_weather(city),
-                        parse_mode='HTML'
-                    )
-                    count += 1
-                    db.query(User).where(User.id == user).update(
-                        {User.active: True})
+                    city = db.query(Alert.city).where(Alert.id == user).first()[0]
+                    timezone = db.query(Alert.timezone).where(Alert.id == user).first()[0]
+                    if ((datetime.now()-timedelta(seconds=10800)) + timedelta(seconds=timezone)).hour in [7, 13, 17]:
+                        await bot.send_message(
+                            chat_id=user,
+                            text=get_weather(city),
+                            parse_mode='HTML'
+                        )
+                        db.query(User).where(User.id == user).update(
+                            {User.active: True})
                 except:
                     db.query(User).where(User.id == user).update(
                         {User.active: False})
     finally:
         db.commit()
-        await bot.send_message(
-            chat_id=settings.bots.admin_id,
-            text=f"Рассылка завершена:\n\rЧисло сообщений: {count}",
-            parse_mode='HTML'
-        )
-

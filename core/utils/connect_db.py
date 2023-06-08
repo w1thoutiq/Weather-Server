@@ -34,10 +34,11 @@ class User(SqlAlchemyBase):
 
 class Alert(SqlAlchemyBase):
 
-    def __int__(self, id: int, username: str, city: str):
+    def __int__(self, id: int, username: str, city: str, timezone: int):
         self.id = id
         self.username = username
         self.city = city
+        self.timezone = timezone
 
     __tablename__ = 'alerts_base'
 
@@ -54,6 +55,10 @@ class Alert(SqlAlchemyBase):
     city = sqlalchemy.Column(
         sqlalchemy.String,
         nullable=True
+    )
+    timezone = sqlalchemy.Column(
+        sqlalchemy.BIGINT,
+        nullable=False
     )
 
 

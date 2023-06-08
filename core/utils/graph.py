@@ -4,7 +4,7 @@ from os import makedirs
 from datetime import datetime as dt
 
 from core.utils.session_db import create_session
-from core.utils.simple_func import get_weather
+from core.utils.other import get_weather
 from core.utils.connect_db import AlertGraph, User
 import matplotlib.pyplot as plt
 
@@ -103,29 +103,34 @@ def admin_graph(ct: str):
             file_name = f'Graph\\{city}\\{dt.now().date()}.png'
             makedirs(f'Graph\\{city}')
             fig = plt.figure()
-            plt.plot(x, y)
+            plt.bar(x, y)
+            plt.show()
             fig.savefig(file_name, dpi=150)
         except FileExistsError:
             warnings.simplefilter("ignore", UserWarning)
             figure = plt.figure()
-            plt.plot(x, y)
+            plt.bar(x, y)
+            plt.show()
             figure.savefig(file_name, dpi=150)
         finally:
             plt.close()
 
 
 def get_city_set():
-    city_set = set()
-    with create_session() as db:
-        city_lst = list(ctt[0].split(', ') for ctt in db.query(User.city).all())
-        for ct in city_lst:
-            for c in ct:
-                city_set.add(c)
     try:
-        city_set.remove('')
-    except KeyError:
-        pass
-    return city_set
+        city_set = set()
+        with create_session() as db:
+            city_lst = list(ctt[0].split(', ') for ctt in db.query(User.city).all())
+            for ct in city_lst:
+                for c in ct:
+                    city_set.add(c)
+        try:
+            city_set.remove('')
+        except KeyError:
+            pass
+        return city_set
+    except AttributeError:
+        print("Ошибка опять")
 
 
 time_of_dict = {
