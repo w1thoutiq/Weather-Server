@@ -14,20 +14,34 @@ async def get_weather(city, tomorrow: bool = False):
               'lang': 'ru'}
     result = get(url, params=params).json()
     description = {
-        'Clouds': 'cyan',
-        'Rain': 'blue',
+        'Clouds': 'skyblue',  # gray
+        'Rain': 'teal',
         'Clear': 'yellow'
     }
+    time_in_city = (dt.now()-timedelta(seconds=10800)) + timedelta(seconds=result['city']['timezone'])
     temperature = {}
     weather = []
     fig = plt.figure()
-    plt.xlabel('Время')
-    plt.ylabel('Температура')
-    plt.title(city)
+    if time_in_city.hour < 3 or time_in_city.hour > 20:
+        plt.rcParams.update({
+            "figure.facecolor": "black",
+            "axes.facecolor": "black",
+            "savefig.facecolor": "black",
+            "axes.edgecolor": "white",
+            "axes.labelcolor": "white",
+            "xtick.color": "white",
+            "ytick.color": "white",
+            "grid.color": "white"
+        })
+        plt.title(f'{city}', color='white')
+    else:
+        plt.title(f'{city}')
+    plt.xlabel('Время, часы')
+    plt.ylabel('Температура, °C')
     if tomorrow is True:
         for i in result['list']:
-            if str((dt.now()+timedelta(days=1)).date()) == i['dt_txt'].split(' ')[0]:
-                temperature[i['dt_txt'].split(' ')[1][:2:]] = i['main']['temp']
+            if str((time_in_city+timedelta(days=1)).date()) == i['dt_txt'].split(' ')[0]:
+                temperature[i['dt_txt'].split(' ')[1][:5:]] = i['main']['temp']
                 weather.append(description[i['weather'][0]['main']])
         y = temperature.values()
         x = temperature.keys()
@@ -42,7 +56,7 @@ async def get_weather(city, tomorrow: bool = False):
             return
     elif tomorrow is False:
         for i in result['list']:
-            if str(dt.now().date()) == i['dt_txt'].split(' ')[0]:
+            if str(time_in_city.date()) == i['dt_txt'].split(' ')[0]:
                 temperature[i['dt_txt'].split(' ')[1][:2:]] = i['main']['temp']
                 weather.append(description[i['weather'][0]['main']])
         x = temperature.keys()

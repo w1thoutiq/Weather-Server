@@ -2,9 +2,12 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 
-def menu_of_alerts():
+def menu_of_alerts(subscribe: bool = False):
     builder = InlineKeyboardBuilder()
-    builder.button(text='Подписаться', callback_data='alerts_subscribe')
+    if subscribe:
+        builder.button(text='Поменять', callback_data='alerts_subscribe')
+    else:
+        builder.button(text='Подписаться', callback_data='alerts_subscribe')
     builder.button(text='Отписаться', callback_data='alerts_unsubscribe')
     builder.button(text=f'Назад', callback_data=f'alerts_cancel')
     builder.adjust(2, 1)

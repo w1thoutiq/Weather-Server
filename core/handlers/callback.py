@@ -78,10 +78,12 @@ async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
             await my_city(call, bot=bot)
         elif action == 'alerts':
             if db.query(Alert).where(Alert.id == call.from_user.id).first():
+                city = db.query(Alert.city).where(Alert.id == call.from_user.id).first()[0]
                 await call.message.edit_text(
                     text="Меню рассылки:\n\r"
-                         "<strong>Вы подписаны</strong> \U00002705",
-                    reply_markup=menu_of_alerts(),
+                         "<strong>Вы подписаны \U00002705\n"
+                         "Ваш регион - {}</strong>".format(city),
+                    reply_markup=menu_of_alerts(subscribe=True),
                     parse_mode='HTML')
             elif db.query(Alert).where(
                     Alert.id == call.from_user.id
@@ -199,7 +201,7 @@ async def call_prediction(call: CallbackQuery):
         await call.message.delete()
         await call.message.answer_photo(
             photo=FSInputFile(f'Bar/{city}/{datetime.now().date()}.png'),
-            caption="<b>Бирюзовый цвет - Облачно\n"
+            caption="<b>Серый цвет - Облачно\n"
                     "Синий цвет - Дождливая погода\n"
                     "Желтый цвет - Ясно</b>"
         )
@@ -213,7 +215,7 @@ async def call_prediction(call: CallbackQuery):
         await call.message.delete()
         await call.message.answer_photo(
             photo=FSInputFile(f'Bar/{city}/{(datetime.now()+timedelta(days=1)).date()}.png'),
-            caption="<b>Бирюзовый цвет - Облачно\n"
+            caption="<b>Серый цвет - Облачно\n"
                     "Синий цвет - Дождливая погода\n"
                     "Желтый цвет - Ясно</b>"
         )

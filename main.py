@@ -29,7 +29,7 @@ async def start():
         func=alerts_message,
         trigger='interval',
         hours=1,
-        next_run_time=(dt.now()+timedelta(minutes=60-dt.now().minute)).replace(second=0, microsecond=0),
+        start_date=(dt.now()+timedelta(minutes=60-dt.now().minute)).replace(second=0, microsecond=0),
         kwargs={'bot': bot}
     )
     # Сбор статистики
