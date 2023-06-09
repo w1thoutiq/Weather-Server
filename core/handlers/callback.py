@@ -154,7 +154,6 @@ async def send_graph(call: CallbackQuery, bot: Bot):
     city = call.data.split('graph_')[1]
     try:
         await bot.send_photo(
-            chat_id=call.message.chat.id,
             photo=FSInputFile(
                 f'Graph\\{city}\\{datetime.now().date()-timedelta(days=1)}.png'
             ),

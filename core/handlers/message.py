@@ -248,6 +248,9 @@ async def set_city(message: Message, state: FSMContext):
 # Обработка любого текста, если есть город, тогда вернет погоду пользователю
 async def unknown_message_text(message: Message):
     try:
+        await message.answer_photo(
+            photo=message.text
+        )
         city = message.text.capitalize()
         await message.answer(
             text=get_weather(city),
