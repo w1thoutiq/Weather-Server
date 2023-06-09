@@ -108,46 +108,6 @@ async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
             )
 
 
-@router.callback_query(F.data.startswith('kb_'), StateSet.city)
-async def kb_set(call, state: FSMContext, bot: Bot):
-    await call.answer()
-    action = call.data.split('kb_')[1]
-    data = await state.get_data()
-    city = data.get('city') + ', '
-    with create_session() as db:
-        if action == 'add':
-            cities = db.query(User.city).where(
-                User.id == int(call.from_user.id)
-            ).first()[0]
-            if city in cities:
-                await bot.edit_message_text(
-                    chat_id=call.from_user.id,
-                    message_id=call.message.message_id,
-                    text=f'Этот город уже есть в списке'
-                )
-            else:
-                cities = f'{cities}{city}'
-                db.query(User).where(User.id == int(call.from_user.id)).update({
-                    User.city: cities, User.active: True
-                })
-                await bot.edit_message_text(
-                    chat_id=call.from_user.id,
-                    message_id=call.message.message_id,
-                    text=f'Город добавлен'
-                )
-            db.commit()
-        elif action == 'set':
-            db.query(User).where(User.id == int(call.from_user.id)).update({
-                    User.city: city, User.active: True
-                })
-            await bot.edit_message_text(
-                chat_id=call.from_user.id,
-                message_id=call.message.message_id,
-                text=f'Город установлен!\nВаш регион: {city[:-2:]}')
-        db.commit()
-        await state.clear()
-
-
 @router.callback_query(F.data.startswith('graph_'))
 async def send_graph(call: CallbackQuery, bot: Bot):
     await call.answer()

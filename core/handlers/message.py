@@ -1,18 +1,14 @@
 from aiogram.filters import Command
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
-from aiogram import Router, F
+from aiogram.types import Message, CallbackQuery
+from aiogram import Router, F, Bot
 
 
-from core.utils.other import *
-from core.keyboards.inline import *
-from core.keyboards.reply import *
-from core.utils.connect_db import *
 from core.handlers.basic import set_default_commands
-from core.utils.graph import admin_graph
-from core.middlewares.filters import IsAdmin
-from core.utils.states import StateAlerts, StateSet
-
+from core.keyboards.inline import mark, menu, admin, weather_btn
+from core.keyboards.reply import get_weather_button
+from core.utils.connect_db import User
+from core.utils.other import get_weather
+from core.utils.session_db import create_session
 
 router = Router()
 
@@ -102,34 +98,6 @@ async def cmd_developer(message: Message, bot: Bot):
     )
 
 
-@router.message(IsAdmin(), Command(commands='message'))
-async def cmd_message(message: Message, bot: Bot):
-    count_right = 0
-    count_left = 0
-    with create_session() as db:
-        users = [int(user[0]) for user in db.query(User.id).all()]
-        for user in users:
-            try:
-                await get_weather_for_cities(
-                    user_id=user, bot=bot, chat_id=user
-                )
-                if db.query(User.active).where(User.id == user) is False:
-                    db.query(User).where(User.id == user).update(
-                        {User.active: True})
-                count_right += 1
-            except Exception:
-                count_left += 1
-                db.query(User).where(User.id == user).update(
-                    {User.active: False})
-        await message.answer(
-            text="Рассылка завершена\n\r"
-                 f"Удачных сообщений: <b>{count_right}</b>\n\r"
-                 f"Не удачных: <b>{count_left}</b>\n\r"
-                 f"Всего сообщений: <b>{count_left + count_right}</b>",
-            parse_mode='html'
-        )
-
-
 @router.message(F.text.lower() == 'погода')
 async def weather(message: Message):
     try:
@@ -140,108 +108,6 @@ async def weather(message: Message):
                              reply_markup=weather_btn(cities))
     except TypeError:
         await message.answer("Нет установленных регионов")
-
-
-@router.message(IsAdmin(), Command('alerts'))
-async def call_alerts_message(message: Message, bot: Bot):
-    await message.answer('Начинаю рассылку')
-    await alerts_message(bot=bot)
-
-
-@router.message(IsAdmin(), Command('graph'))
-async def send_graph_admin(message: Message, bot: Bot):
-    city = message.text[7::].capitalize()
-    admin_graph(city)
-    try:
-        await bot.send_photo(
-            chat_id=message.chat.id,
-            photo=FSInputFile(f'Graph\\{city}\\{datetime.now().date()}.png'),
-            caption=f'График погоды города - <b>{city}</b> за'
-                    f' <b>{datetime.now().date()}</b>'
-        )
-    except TelegramNetworkError:
-        await message.answer('График еще не готов ☠')
-
-
-@router.message(IsAdmin(), Command(commands=['db']))
-@flags.chat_action('upload_document')
-async def upload_database(message: Message):
-    try:
-        await message.answer_document(
-            document=FSInputFile(f'DataBase.db'),
-        )
-    except TelegramNetworkError:
-        await message.answer('Что-то пошло не так')
-
-
-@router.message(F.text and StateAlerts.subscribe)
-async def second_step_alert(message: Message, state: FSMContext):
-    if message.text.lower() == 'отмена':
-        await state.clear()
-        await message.answer(f'Главное меню', reply_markup=menu())
-    else:
-        with create_session() as db:
-            city = message.text.capitalize()
-            try:  # Обработка ошибки если такого региона не существует
-                checkout = get_weather(city, timezone=True)
-                if checkout is None:
-                    raise ValueError
-                if db.query(Alert).where(
-                        Alert.id == int(message.from_user.id)).first() is None:
-                    db.add(Alert(
-                        id=message.from_user.id,
-                        username=message.from_user.username,
-                        city=city,
-                        timezone=checkout
-                    ))
-                else:
-                    db.query(Alert).where(
-                        Alert.id == int(message.from_user.id)).update(
-                        {
-                            Alert.id: message.from_user.id,
-                            Alert.city: city,
-                            Alert.username: message.from_user.username,
-                            Alert.timezone: checkout
-                        }
-                    )
-                data = await state.get_data()
-                call = data.get('call')
-                await call.message.edit_text(
-                    text='Вы подписаны на рассылку 🎉',
-                    reply_markup=menu()
-                )
-                await state.clear()
-            except ValueError:
-                await message.answer(
-                    f'Что-то пошло не так! \U0001F915'
-                    f'\nНапишите "отмена", если передумали',
-                    reply_markup=cancel()
-                )
-            finally:
-                db.commit()
-                await message.delete()
-
-
-@router.message(F.text and StateSet.city)
-async def set_city(message: Message, state: FSMContext):
-    if message.text.lower() == 'отмена':
-        await state.clear()
-        await message.answer(f'Главное меню', reply_markup=menu())
-    else:
-        city = message.text.capitalize()
-        try:  # Обработка ошибки если такого региона не существует
-            if get_weather(city) is None:
-                raise ValueError
-            await state.update_data(city=city)
-            await message.answer(f'Что ты хочешь сделать с этим регионом?',
-                                 reply_markup=add_city_menu()
-                                 )
-        except ValueError:
-            await message.reply(
-                f'Что-то пошло не так! \U0001F915'
-                f'\nНапишите "отмена", если передумали',
-                reply_markup=cancel()
-                                )
 
 
 @router.message(F.text)

@@ -1,9 +1,14 @@
-from aiogram import Bot
+from aiogram import Bot, Router
 from aiogram.exceptions import TelegramNetworkError
 from aiogram.types import BotCommand, BotCommandScopeDefault, FSInputFile
+
 from core.settings import settings
 
 
+router = Router()
+
+
+@router.startup()
 async def startup(bot: Bot):
     await set_default_commands(bot)
     await bot.send_message(
@@ -13,6 +18,7 @@ async def startup(bot: Bot):
     )
 
 
+@router.shutdown()
 async def shutting_off(bot: Bot):
     await bot.send_message(
         chat_id=settings.bots.admin_id,

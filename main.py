@@ -6,13 +6,16 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram import Dispatcher, Bot
 from aiogram.utils.chat_action import ChatActionMiddleware
 
-from core.handlers.basic import startup, shutting_off
 from core.settings import settings
 from core.utils.other import alerts_message, warning_database
 from core.utils.session_db import global_init
 from core.handlers.message import router as message_router
 from core.handlers.callback import router as callback_router
 from core.middlewares.transition import router as transition_router
+from core.handlers.basic import router as basic_router
+from core.handlers.city import router as city_router
+from core.handlers.admin import router as admin_router
+from core.handlers.subscribe import router as subscribe_router
 
 
 async def start():
@@ -30,24 +33,34 @@ async def start():
         func=alerts_message,
         trigger='interval',
         hours=1,
-        start_date=(dt.now()+timedelta(minutes=60-dt.now().minute)).replace(second=0, microsecond=0),
+        start_date=(
+                dt.now() + timedelta(minutes=60-dt.now().minute)
+        ).replace(second=0),
         kwargs={'bot': bot}
     )
-    # Сбор статистики
-    scheduler.add_job(func=warning_database, trigger='cron', hour='23', minute='59', start_date=dt.now(), kwargs={'bot': bot})
 
-    # Функции для запуска и завершения работы бота
-    dp.startup.register(startup)
-    dp.shutdown.register(shutting_off)
+    # Сбор статистики
+    scheduler.add_job(
+        func=warning_database,
+        trigger='cron',
+        hour='23',
+        minute='59',
+        start_date=dt.now(),
+        kwargs={'bot': bot}
+    )
 
     # Обработка middlewares
     dp.message.middleware(ChatActionMiddleware())
     dp.callback_query.middleware(ChatActionMiddleware())
 
     # Подключение router'ов
-    dp.include_router(message_router)
-    dp.include_router(callback_router)
+    dp.include_router(admin_router)
+    dp.include_router(city_router)
+    dp.include_router(subscribe_router)
     dp.include_router(transition_router)
+    dp.include_router(basic_router)
+    dp.include_router(callback_router)
+    dp.include_router(message_router)
 
     try:
         global_init('DataBase.db')
