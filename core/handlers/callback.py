@@ -1,5 +1,6 @@
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
+from aiogram.types import InputFile
 
 from core.utils.graph import get_city_set
 from core.utils.other import *
@@ -154,6 +155,7 @@ async def send_graph(call: CallbackQuery, bot: Bot):
     city = call.data.split('graph_')[1]
     try:
         await bot.send_photo(
+            chat_id=call.message.chat.id,
             photo=FSInputFile(
                 f'Graph\\{city}\\{datetime.now().date()-timedelta(days=1)}.png'
             ),
@@ -191,7 +193,7 @@ async def call_alerts(call: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data.startswith('prediction_'))
 @flags.chat_action('upload_photo')
-async def call_prediction(call: CallbackQuery, bot: Bot):
+async def call_prediction(call: CallbackQuery):
     await call.answer()
     action = call.data.split('_')[1]
     try:
@@ -200,12 +202,8 @@ async def call_prediction(call: CallbackQuery, bot: Bot):
         if action == 'today':
             await prediction.get_weather(city, tomorrow=False)
             await call.message.delete()
-            await bot.send_photo(
-                chat_id=call.from_user.id,
-                photo=FSInputFile(
-                    f'Bar/{city}/{datetime.now().date()}.png',
-                    filename=city
-                ),
+            await call.message.answer_photo(
+                photo=InputFile(f'Bar\\{city}\\{datetime.now().date()}.png'),
                 caption="<b>Голубой цвет - Облачно\n"
                         "Синий цвет - Дождливая погода\n"
                         "Желтый цвет - Ясно</b>"
@@ -219,11 +217,9 @@ async def call_prediction(call: CallbackQuery, bot: Bot):
         elif action == 'tomorrow':
             await prediction.get_weather(city, tomorrow=True)
             await call.message.delete()
-            await bot.send_photo(
-                chat_id=call.from_user.id,
+            await call.message.answer_photo(
                 photo=FSInputFile(
-                    f'Bar/{city}/{(datetime.now()+timedelta(days=1)).date()}.png',
-                    filename=city
+                    f'Bar\\{city}\\{(datetime.now()+timedelta(days=1)).date()}.png'
                 ),
                 caption="<b>Голубой цвет - Облачно\n"
                         "Синий цвет - Дождливая погода\n"
