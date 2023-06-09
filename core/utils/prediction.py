@@ -15,7 +15,7 @@ async def get_weather(city, tomorrow: bool = False):
     result = get(url, params=params).json()
     description = {
         'Clouds': 'skyblue',  # gray
-        'Rain': 'teal',
+        'Rain': 'blue',
         'Clear': 'yellow'
     }
     time_in_city = (dt.now()-timedelta(seconds=10800)) + timedelta(seconds=result['city']['timezone'])
