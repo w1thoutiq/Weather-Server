@@ -7,12 +7,12 @@ from aiogram import Router, F
 from core.utils.other import *
 from core.keyboards.inline import *
 from core.keyboards.reply import *
-from core.utils.session_db import *
 from core.utils.connect_db import *
 from core.handlers.basic import set_default_commands
 from core.utils.graph import admin_graph
 from core.middlewares.filters import IsAdmin
 from core.utils.states import StateAlerts, StateSet
+
 
 router = Router()
 
@@ -102,7 +102,7 @@ async def cmd_developer(message: Message, bot: Bot):
     )
 
 
-@router.message(IsAdmin(), Command('message'))
+@router.message(IsAdmin(), Command(commands='message'))
 async def cmd_message(message: Message, bot: Bot):
     count_right = 0
     count_left = 0

@@ -1,6 +1,5 @@
 from aiogram.fsm.context import FSMContext
 from aiogram import Router, F
-from aiogram.types import InputFile
 
 from core.utils.graph import get_city_set
 from core.utils.other import *
@@ -203,7 +202,7 @@ async def call_prediction(call: CallbackQuery):
             await prediction.get_weather(city, tomorrow=False)
             await call.message.delete()
             await call.message.answer_photo(
-                photo=InputFile(f'Bar\\{city}\\{datetime.now().date()}.png'),
+                photo=FSInputFile(f'Bar\\{city}\\{datetime.now().date()}.png'),
                 caption="<b>Голубой цвет - Облачно\n"
                         "Синий цвет - Дождливая погода\n"
                         "Желтый цвет - Ясно</b>"

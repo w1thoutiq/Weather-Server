@@ -1,5 +1,5 @@
 import sqlalchemy
-from core.utils.session_db import SqlAlchemyBase
+from core.utils.session_db import SqlAlchemyBase, create_session
 
 
 class User(SqlAlchemyBase):
@@ -17,7 +17,7 @@ class User(SqlAlchemyBase):
         nullable=True
     )
     id = sqlalchemy.Column(
-        sqlalchemy.String,
+        sqlalchemy.BIGINT,
         nullable=False,
         primary_key=True,
         unique=True
@@ -30,6 +30,20 @@ class User(SqlAlchemyBase):
         sqlalchemy.Boolean,
         nullable=False
     )
+
+
+async def update_status(user_id: int, status: bool = False) -> None:
+    """
+    Функция обновления статуса пользователя в бд
+    :param user_id: telegram user id
+    :param status: status must be str
+    :return: None
+    """
+    with create_session() as db:
+        db.query(User).where(
+            User.id == user_id
+        ).update({User.active: status})
+        db.commit()
 
 
 class Alert(SqlAlchemyBase):

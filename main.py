@@ -12,6 +12,7 @@ from core.utils.other import alerts_message, warning_database
 from core.utils.session_db import global_init
 from core.handlers.message import router as message_router
 from core.handlers.callback import router as callback_router
+from core.middlewares.transition import router as transition_router
 
 
 async def start():
@@ -46,6 +47,7 @@ async def start():
     # Подключение router'ов
     dp.include_router(message_router)
     dp.include_router(callback_router)
+    dp.include_router(transition_router)
 
     try:
         global_init('DataBase.db')
