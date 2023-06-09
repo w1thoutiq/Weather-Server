@@ -247,17 +247,17 @@ async def set_city(message: Message, state: FSMContext):
 @router.message(F.text)
 # Обработка любого текста, если есть город, тогда вернет погоду пользователю
 async def unknown_message_text(message: Message):
-    try:
-        await message.answer_photo(
-            photo=message.text
-        )
-        city = message.text.capitalize()
-        await message.answer(
-            text=get_weather(city),
-            parse_mode='HTML'
-        )
-    except Exception:
-        await message.reply(f'\U0001F915 Страна или регион указан неверно!')
+    # try:
+    await message.answer_photo(
+        photo=FSInputFile(message.text)
+    )
+    city = message.text.capitalize()
+    await message.answer(
+        text=get_weather(city),
+        parse_mode='HTML'
+    )
+    # except Exception:
+    #     await message.reply(f'\U0001F915 Страна или регион указан неверно!')
 
 
 @router.message()
