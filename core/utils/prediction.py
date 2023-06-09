@@ -50,7 +50,7 @@ async def get_weather(city, tomorrow: bool = False):
         try:
             makedirs(f'Bar\\{city}')
             fig.savefig(file_name, dpi=150)
-        except Exception:
+        except FileExistsError:
             fig.savefig(file_name, dpi=150)
         finally:
             return
@@ -66,7 +66,7 @@ async def get_weather(city, tomorrow: bool = False):
         try:
             makedirs(f'Bar\\{city}')
             fig.savefig(file_name, dpi=150)
-        except Exception:
+        except FileExistsError:
             fig.savefig(file_name, dpi=150)
         finally:
             return
