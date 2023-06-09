@@ -48,9 +48,9 @@ async def get_weather(city, tomorrow: bool = False):
         plt.bar(x, y, color=weather)
         file_name = f'Bar\\{city}\\{(dt.now() + timedelta(days=1)).date()}.png'
         try:
-            makedirs(f'Bar\\{city}')
             fig.savefig(file_name, dpi=150)
-        except FileExistsError:
+        except FileNotFoundError:
+            makedirs(f'Bar\\{city}')
             fig.savefig(file_name, dpi=150)
         finally:
             return
@@ -64,9 +64,9 @@ async def get_weather(city, tomorrow: bool = False):
         plt.bar(x, y, color=weather)
         file_name = f'Bar\\{city}\\{dt.now().date()}.png'
         try:
-            makedirs(f'Bar\\{city}')
             fig.savefig(file_name, dpi=150)
-        except FileExistsError:
+        except FileNotFoundError:
+            makedirs(f'Bar\\{city}')
             fig.savefig(file_name, dpi=150)
         finally:
             return

@@ -165,7 +165,7 @@ async def send_graph(call: CallbackQuery, bot: Bot):
 
 
 @router.callback_query(F.data.startswith('alerts_'))
-async def call_alerts(call: CallbackQuery, state: FSMContext, bot: Bot):
+async def call_alerts(call: CallbackQuery, state: FSMContext):
     await state.update_data(call=call)
     await call.answer()
     action = call.data.split('alerts_')[1]
@@ -190,45 +190,48 @@ async def call_alerts(call: CallbackQuery, state: FSMContext, bot: Bot):
 
 
 @router.callback_query(F.data.startswith('prediction_'))
-async def call_prediction(call: CallbackQuery):
+async def call_prediction(call: CallbackQuery, bot: Bot):
     await call.answer()
     action = call.data.split('_')[1]
-    # try:
-    with create_session() as db:
-        city = db.query(Alert.city).where(Alert.id == call.from_user.id).first()[0]
-    if action == 'today':
-        await prediction.get_weather(city, tomorrow=False)
-        await call.message.delete()
-        await call.message.answer_photo(
-            photo=FSInputFile(f'Bar/{city}/{datetime.now().date()}.png'),
-            caption="<b>Голубой цвет - Облачно\n"
-                    "Синий цвет - Дождливая погода\n"
-                    "Желтый цвет - Ясно</b>"
-        )
+    try:
+        with create_session() as db:
+            city = db.query(Alert.city).where(Alert.id == call.from_user.id).first()[0]
+        if action == 'today':
+            await prediction.get_weather(city, tomorrow=False)
+            await call.message.delete()
+            await bot.send_photo(
+                chat_id=call.message.chat.id,
+                photo=FSInputFile(f'Bar/{city}/{datetime.now().date()}.png'),
+                caption="<b>Голубой цвет - Облачно\n"
+                        "Синий цвет - Дождливая погода\n"
+                        "Желтый цвет - Ясно</b>"
+            )
+            await call.message.answer(
+                'Прогноз на сегодня',
+                reply_markup=menu(),
+                disable_notification=True
+            )
+        elif action == 'tomorrow':
+            await prediction.get_weather(city, tomorrow=True)
+            await call.message.delete()
+            await bot.send_photo(
+                chat_id=call.message.chat.id,
+                photo=FSInputFile(
+                    f'Bar/{city}/{(datetime.now()+timedelta(days=1)).date()}.png'
+                ),
+                caption="<b>Голубой цвет - Облачно\n"
+                        "Синий цвет - Дождливая погода\n"
+                        "Желтый цвет - Ясно</b>"
+            )
+            await call.message.answer(
+                'Прогноз на завтра',
+                reply_markup=menu(),
+                disable_notification=True
+            )
+    except TypeError:
         await call.message.answer(
-            'Прогноз на сегодня',
-            reply_markup=menu(),
-            disable_notification=True
+            'Возможно вы не подписаны на рассылку.',
+            reply_markup=menu_of_alerts()
         )
-    elif action == 'tomorrow':
-        await prediction.get_weather(city, tomorrow=True)
-        await call.message.delete()
-        await call.message.answer_photo(
-            photo=FSInputFile(f'Bar/{city}/{(datetime.now()+timedelta(days=1)).date()}.png'),
-            caption="<b>Голубой цвет - Облачно\n"
-                    "Синий цвет - Дождливая погода\n"
-                    "Желтый цвет - Ясно</b>"
-        )
-        await call.message.answer(
-            'Прогноз на завтра',
-            reply_markup=menu(),
-            disable_notification=True
-        )
-    # except TypeError as e:
-    #     print(e)
-    #     await call.message.answer(
-    #         'Возможно вы не подписаны на рассылку.',
-    #         reply_markup=menu_of_alerts()
-    #     )
-    # except Exception:
-    #     await call.message.answer('Что-то пошло не так.')
+    except Exception:
+        await call.message.answer('Что-то пошло не так.')
