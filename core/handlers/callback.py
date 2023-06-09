@@ -7,6 +7,7 @@ from core.keyboards.inline import *
 from core.utils.states import *
 from core.utils import prediction
 
+
 router = Router()
 
 
@@ -190,6 +191,7 @@ async def call_alerts(call: CallbackQuery, state: FSMContext):
 
 
 @router.callback_query(F.data.startswith('prediction_'))
+@flags.chat_action('upload_photo')
 async def call_prediction(call: CallbackQuery, bot: Bot):
     await call.answer()
     action = call.data.split('_')[1]
@@ -200,8 +202,11 @@ async def call_prediction(call: CallbackQuery, bot: Bot):
             await prediction.get_weather(city, tomorrow=False)
             await call.message.delete()
             await bot.send_photo(
-                chat_id=call.message.chat.id,
-                photo=FSInputFile(f'Bar/{city}/{datetime.now().date()}.png'),
+                chat_id=call.from_user.id,
+                photo=FSInputFile(
+                    f'Bar/{city}/{datetime.now().date()}.png',
+                    filename=city
+                ),
                 caption="<b>Голубой цвет - Облачно\n"
                         "Синий цвет - Дождливая погода\n"
                         "Желтый цвет - Ясно</b>"
@@ -211,13 +216,15 @@ async def call_prediction(call: CallbackQuery, bot: Bot):
                 reply_markup=menu(),
                 disable_notification=True
             )
+            return
         elif action == 'tomorrow':
             await prediction.get_weather(city, tomorrow=True)
             await call.message.delete()
             await bot.send_photo(
-                chat_id=call.message.chat.id,
+                chat_id=call.from_user.id,
                 photo=FSInputFile(
-                    f'Bar/{city}/{(datetime.now()+timedelta(days=1)).date()}.png'
+                    f'Bar/{city}/{(datetime.now()+timedelta(days=1)).date()}.png',
+                    filename=city
                 ),
                 caption="<b>Голубой цвет - Облачно\n"
                         "Синий цвет - Дождливая погода\n"
@@ -228,6 +235,7 @@ async def call_prediction(call: CallbackQuery, bot: Bot):
                 reply_markup=menu(),
                 disable_notification=True
             )
+            return
     except TypeError:
         await call.message.answer(
             'Возможно вы не подписаны на рассылку.',
