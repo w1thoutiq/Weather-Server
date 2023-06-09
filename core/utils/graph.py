@@ -6,6 +6,7 @@ from datetime import datetime as dt
 from core.utils.session_db import create_session
 from core.utils.other import get_weather
 from core.utils.connect_db import AlertGraph, User
+
 import matplotlib.pyplot as plt
 
 

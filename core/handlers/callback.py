@@ -5,7 +5,7 @@ from core.utils.graph import get_city_set
 from core.utils.other import *
 from core.keyboards.inline import *
 from core.utils.states import *
-from utils import prediction
+from core.utils import prediction
 
 router = Router()
 
