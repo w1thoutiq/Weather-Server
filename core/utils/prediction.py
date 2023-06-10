@@ -22,7 +22,8 @@ async def get_weather(city, tomorrow: bool = False):
     temperature = {}
     weather = []
     fig = plt.figure()
-    if time_in_city.hour < 3 or time_in_city.hour > 20:
+    print(time_in_city, time_in_city.hour)
+    if not time_in_city.hour < 3 or time_in_city.hour > 20:
         plt.rcParams.update({
             "figure.facecolor": "black",
             "axes.facecolor": "black",
@@ -35,7 +36,7 @@ async def get_weather(city, tomorrow: bool = False):
         })
         plt.title(f'{city}', color='white')
     else:
-        plt.title(f'{city}')
+        plt.title(f'{city}', color='black')
     plt.xlabel('Время, часы')
     plt.ylabel('Температура, °C')
     if tomorrow is True:
