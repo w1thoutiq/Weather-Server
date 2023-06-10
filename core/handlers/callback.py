@@ -163,9 +163,9 @@ async def call_prediction(call: CallbackQuery):
             await call.message.delete()
             await call.message.answer_photo(
                 photo=FSInputFile(f'Bar\\{city}\\{datetime.now().date()}.png'),
-                caption="<b>Голубой цвет - Облачно\n"
-                        "Синий цвет - Дождливая погода\n"
-                        "Желтый цвет - Ясно</b>"
+                caption="<b>🟢 - Облачно\n"
+                        "🔵 - Дождливая погода\n"
+                        "🟡 - Ясно</b>"
             )
             await call.message.answer(
                 'Прогноз на сегодня',
@@ -180,9 +180,9 @@ async def call_prediction(call: CallbackQuery):
                 photo=FSInputFile(
                     f'Bar\\{city}\\{(datetime.now()+timedelta(days=1)).date()}.png'
                 ),
-                caption="<b>Голубой цвет - Облачно\n"
-                        "Синий цвет - Дождливая погода\n"
-                        "Желтый цвет - Ясно</b>"
+                caption="<b>🟢 - Облачно\n"
+                        "🔵 - Дождливая погода\n"
+                        "🟡 - Ясно</b>"
             )
             await call.message.answer(
                 'Прогноз на завтра',
