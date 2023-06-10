@@ -14,7 +14,7 @@ async def get_weather(city, tomorrow: bool = False):
               'lang': 'ru'}
     result = get(url, params=params).json()
     description = {
-        'Clouds': 'skyblue',
+        'Clouds': 'green',
         'Rain': 'blue',
         'Clear': 'yellow'
     }
