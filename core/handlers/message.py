@@ -1,92 +1,60 @@
 from aiogram.filters import Command
 from aiogram.types import Message, CallbackQuery
 from aiogram import Router, F, Bot
+from sqlalchemy.exc import IntegrityError
 
-
-from core.handlers.basic import set_default_commands
-from core.keyboards.inline import mark, menu, admin, weather_btn
+from core.keyboards.inline import mark, menu, admin
 from core.keyboards.reply import get_weather_button
-from core.utils.connect_db import User
 from core.utils.other import get_weather
-from core.utils.session_db import create_session
+from core.database.Connector import Connector
+
 
 router = Router()
 
 
 @router.message(Command(commands=['start']))
-async def cmd_start(message: Message, bot: Bot):
-    await set_default_commands(bot)
-    with create_session() as db:
-        users = [user[0] for user in db.query(User.id).all()]
-        if message.from_user.id in users:
-            await message.answer(
-                f'Привет, ***{message.from_user.first_name}*** \U0001F609 !\n'
-                f'Я Telegram-бот для получения погоды в любом регионе. '
-                f'Для получения всех команд, которые я понимаю, нажмите "help".'
-                f'\nИли пропишите команду /help.\n',
-                parse_mode='Markdown',
-                reply_markup=mark())
-            await bot.send_message(
-                message.chat.id,
-                f'Вижу ты тут впервые, '
-                f'напишите "/manage" для того что бы установить регион'
-                f' для получения погоды.'
-                f'\nТак же ты можешь написать любой регион, '
-                f'а я отправлю погоду в этом регионе \U000026C5',
-                parse_mode=''
-            )
-            db.add(User(
-                id=message.from_user.id,
-                username=message.from_user.username,
-                active=True
-            ))
-        else:
-            await bot.send_message(
-                message.chat.id,
-                f'Привет, ***{message.from_user.first_name}*** \U0001F609!\n'
-                f'Я тебя помню!\n'
-                f'Нажми "help" для ознакомления с командами.\n'
-                f'Напиши регион для получения погоды \U000026C5',
-                reply_markup=mark(),
-                parse_mode='Markdown')
-            await message.answer(
-                'Если у тебя уже выставлен регион просто нажми "Погода"',
-                reply_markup=get_weather_button())
-            db.query(User).where(User.id == message.from_user.id).update(
-                {User.active: True}
-            )
-        db.commit()
+async def cmd_start(message: Message, connector: Connector):
+    try:
+        await connector.add_in_user(
+            telegram_id=message.from_user.id,
+            username=message.from_user.username,
+            status='member'
+        )
+    except IntegrityError:
+        await connector.update_status(message.from_user.id, 'member')
+    finally:
+        await message.answer(
+            f'Привет, ***{message.from_user.first_name}*** 🖐 !\n'
+            f'Я Telegram-бот для получения погоды в любом регионе. '
+            f'Для получения всех команд, которые я понимаю, пропишите команду /help.',
+            parse_mode='Markdown',
+            reply_markup=mark())
+        await message.answer(
+            f'Меню \U000026C5',
+            reply_markup=menu(),
+            disable_notification=False
+        )
 
 
 @router.callback_query(F.data == 'help')
 @router.message(Command(commands=['help']))
-async def cmd_help(message: [Message, CallbackQuery], bot: Bot):
+async def cmd_help(message: Message | CallbackQuery, bot: Bot, connector: Connector):
     text = f'Я понимаю эти команды:\n'\
-           f'/start\n/help\n/developer\n/manage\n'\
+           f'/start\n/help\n/support\n/manage\n'\
            f'Для получения погоды напишите желаемый регион.\n'\
            f'Для получения погоды в установленном регионе нажми "погода"'
-    if type(message) is CallbackQuery:
+    await bot.send_message(message.from_user.id, text=text,
+                           reply_markup=get_weather_button())
+    await connector.update_status(message.from_user.id, 'member')
+    try:
         await message.answer()
-        await bot.send_message(
-            message.message.chat.id,
-            text=text,
-            parse_mode='',
-            reply_markup=get_weather_button())
-    elif type(message) is Message:
-        await bot.send_message(
-            message.chat.id,
-            text=text,
-            parse_mode='',
-            reply_markup=get_weather_button())
-    with create_session() as db:
-        db.query(User).where(User.id == int(message.from_user.id)).update(
-            {User.active: True})
-        db.commit()
+    except Exception:
+        pass
 
 
 @router.message(Command(commands=['manage']))
 async def cmd_manage(message: Message):
-    await message.answer(text=f'Выберите опцию:', reply_markup=menu())
+    await message.answer(text=f'Меню:', reply_markup=menu())
 
 
 @router.message(Command(commands=['support']))
@@ -99,13 +67,10 @@ async def cmd_developer(message: Message, bot: Bot):
 
 
 @router.message(F.text.lower() == 'погода')
-async def weather(message: Message):
+async def weather(message: Message, connector: Connector):
     try:
-        with create_session() as db:
-            cities = db.query(User.city).where(
-                User.id == int(message.from_user.id)).first()[0].split(', ')
-        await message.answer(text='Для какого региона показать погоду?',
-                             reply_markup=weather_btn(cities))
+        city = await connector.alert_city(message.from_user.id)
+        await message.answer(text=get_weather(city))
     except TypeError:
         await message.answer("Нет установленных регионов")
 

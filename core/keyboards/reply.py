@@ -11,14 +11,10 @@ def cancel():
     kb.button(text='Отмена')
     return kb.as_markup(
         resize_keyboard=True,
-        one_time_keyboard=True
-    )
+        one_time_keyboard=True)
 
 
 def get_weather_button():
     kb = ReplyKeyboardBuilder()
     kb.button(text='Погода')
-    return kb.as_markup(
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
+    return kb.as_markup(resize_keyboard=True,)

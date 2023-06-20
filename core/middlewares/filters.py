@@ -5,7 +5,9 @@ from core.settings import settings
 
 class IsAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        if message.from_user.id == settings.bots.admin_id:
-            return True
-        else:
-            return False
+        return message.from_user.id == settings.bots.admin_id
+
+
+class IsNotPrivate(BaseFilter):
+    async def __call__(self, message: Message) -> bool:
+        return not (message.chat.type == 'private')

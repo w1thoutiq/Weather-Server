@@ -1,20 +1,28 @@
-from aiogram.fsm.context import FSMContext
-from aiogram import Router, F
+from datetime import datetime, timedelta
 
-from core.utils.graph import get_city_set
-from core.utils.other import *
+from aiogram.exceptions import TelegramNetworkError
+from aiogram.fsm.context import FSMContext
+from aiogram import Router, F, Bot, flags
+from aiogram.types import CallbackQuery, FSInputFile
+
+# from core.keyboards.Data import Menu, AlertCall, Weather, Prediction, Remove
+from core.utils.other import get_weather, get_weather_for_cities, my_city
 from core.keyboards.inline import *
 from core.utils.states import *
 from core.utils import prediction
-
+from core.database.Connector import Connector
+from core.database.tables.Alert import Alert
+from core.keyboards.reply import cancel
 
 router = Router()
 
 
-@router.callback_query(F.data.startswith('weather_'))
-async def weather_with_button(call: CallbackQuery, bot: Bot):
+@router.callback_query(Weather.filter())
+async def weather_with_button(
+        call: CallbackQuery, bot: Bot, callback_data: Weather
+):
     await call.answer()
-    city = call.data.split('weather_')[1]
+    city = callback_data.city
     get_weather(city)
     if city == 'cancel':
         await bot.delete_message(message_id=call.message.message_id,
@@ -31,81 +39,84 @@ async def weather_with_button(call: CallbackQuery, bot: Bot):
                                parse_mode='HTML')
 
 
-@router.callback_query(F.data.startswith('city_'))
-async def city_kb(call: CallbackQuery, bot: Bot):
-    city = call.data.split('city_')[1]
+@router.callback_query(Remove.filter())
+async def city_kb(
+        call: CallbackQuery,
+        bot: Bot,
+        connector: Connector,
+        callback_data: Remove
+):
+    city = callback_data.city
     if city == 'cancel':
         await bot.delete_message(message_id=call.message.message_id,
                                  chat_id=call.from_user.id)
     else:
-        with create_session() as db:
-            cities = db.query(User.city).where(
-                User.id == int(call.from_user.id)
-            ).first()[0].replace(city + ', ', '')
-            db.query(User).where(User.id == int(call.from_user.id)).update(
-                {User.city: cities}
+        await connector.remove_city(user=call.from_user.id, city=f'{city}')
+        await bot.edit_message_text(
+            message_id=call.message.message_id,
+            chat_id=call.from_user.id,
+            text=f'Какой еще регион хотите удалить?',
+            reply_markup=get_button_with_city(
+                await connector.cities_of_user(call.from_user.id)
             )
-            cities = cities.split(', ')
-            await bot.edit_message_text(
-                message_id=call.message.message_id,
-                chat_id=call.from_user.id,
-                text=f'Какой еще регион хотите удалить?',
-                reply_markup=get_button_with_city(cities))
-            await call.answer('Удалил регион {}'.format(city), show_alert=True)
-            db.commit()
+        )
+        await call.answer(f'Удалил регион {city}', show_alert=True)
 
 
-@router.callback_query(F.data.startswith('menu_'))
-async def call_city(call: CallbackQuery, state: FSMContext, bot: Bot):
+@router.callback_query(Menu.filter())
+async def call_city(
+        call: CallbackQuery,
+        state: FSMContext,
+        bot: Bot,
+        connector: Connector,
+        callback_data: Menu
+):
+    action = callback_data.action
     await state.update_data(message_id=call.message.message_id)
     await call.answer()
-    action = call.data.split('menu_')[1]
-    with create_session() as db:
-        if action == 'change':
-            city = db.query(User.city).where(
-                User.id == int(call.from_user.id)
-            ).first()[0].split(', ')
-            await bot.send_message(chat_id=call.from_user.id,
-                                   text=f'Ваши регионы:',
-                                   reply_markup=get_button_with_city(city))
-        elif action == 'add':
-            await bot.send_message(
-                chat_id=call.message.chat.id,
-                text=f'Отправь свой населенный пункт',
-                reply_markup=cancel()
-            )
-            await state.set_state(StateSet.city)
-        elif action == 'my_city':
-            await my_city(call, bot=bot)
-        elif action == 'alerts':
-            if db.query(Alert).where(Alert.id == call.from_user.id).first():
-                city = db.query(Alert.city).where(Alert.id == call.from_user.id).first()[0]
-                await call.message.edit_text(
-                    text="Меню рассылки:\n\r"
-                         "<strong>Вы подписаны \U00002705\n"
-                         "Ваш регион - {}</strong>".format(city),
-                    reply_markup=menu_of_alerts(subscribe=True),
-                    parse_mode='HTML')
-            elif db.query(Alert).where(
-                    Alert.id == call.from_user.id
-            ).first() is None:
-                await call.message.edit_text(
-                    text="Меню рассылки:\n\r"
-                         "<strong>Вы не подписаны</strong> \U0000274C",
-                    reply_markup=menu_of_alerts(),
-                    parse_mode='HTML'
-                )
-        elif action == 'graph':
-            await call.message.answer(
-                'Выбери регион',
-                reply_markup=graph_keyboard(get_city_set())
-            )
-        elif action == 'prediction':
+    if action == 'change':
+        city = await connector.cities_of_user(call.from_user.id)
+        await bot.send_message(
+            chat_id=call.from_user.id,
+            text=f'Ваши регионы для удаления:',
+            reply_markup=get_button_with_city(city)
+        )
+    elif action == 'add':
+        await bot.send_message(
+            chat_id=call.message.chat.id,
+            text=f'Отправь свой населенный пункт',
+            reply_markup=cancel()
+        )
+        await state.set_state(StateSet.city)
+    elif action == 'my_city':
+        await my_city(call, bot=bot, connector=connector)
+    elif action == 'alerts':
+        if await connector.get_status_alert(call.from_user.id):
+            city = await connector.alert_city(call.from_user.id)
             await call.message.edit_text(
-                text='<b>Если вы не подписаны на рассылку, я не пришлю вам '
-                     'прогноз погоды.</b>\n\rВыберите прогноз:',
-                reply_markup=prediction_menu()
+                text="Меню рассылки:\n\r"
+                     "<strong>Вы подписаны \U00002705\n"
+                     "Ваш регион - {}</strong>".format(city),
+                reply_markup=menu_of_alerts(subscribe=True),
+                parse_mode='HTML')
+        else:
+            await call.message.edit_text(
+                text="Меню рассылки:\n\r"
+                     "<strong>Вы не подписаны</strong> \U0000274C",
+                reply_markup=menu_of_alerts(),
+                parse_mode='HTML'
             )
+    elif action == 'graph':
+        await call.message.answer(
+            'Выбери регион',
+            reply_markup=graph_keyboard(await connector.cities_of_user(call.from_user.id))
+        )
+    elif action == 'prediction':
+        await call.message.edit_text(
+            text='<b>Если вы не подписаны на рассылку, я не пришлю вам '
+                 'прогноз погоды.</b>\n\rВыберите прогноз:',
+            reply_markup=prediction_menu()
+        )
 
 
 @router.callback_query(F.data.startswith('graph_'))
@@ -125,14 +136,19 @@ async def send_graph(call: CallbackQuery, bot: Bot):
         await call.message.answer('График не найден 😐')
 
 
-@router.callback_query(F.data.startswith('alerts_'))
-async def call_alerts(call: CallbackQuery, state: FSMContext):
+@router.callback_query(AlertCall.filter())
+async def call_alerts(
+        call: CallbackQuery,
+        state: FSMContext,
+        connector: Connector,
+        callback_data: AlertCall
+):
+    action = callback_data.action
     await state.update_data(call=call)
     await call.answer()
-    action = call.data.split('alerts_')[1]
     if action == 'unsubscribe':
-        with create_session() as db:
-            db.query(Alert).where(Alert.id == int(call.from_user.id)).delete()
+        with connector.connector() as db:
+            db.query(Alert).where(Alert.telegram_id == int(call.from_user.id)).delete()
             db.commit()
         await call.message.edit_text(
             text='Удалил вас из рассылки',
@@ -150,15 +166,18 @@ async def call_alerts(call: CallbackQuery, state: FSMContext):
         )
 
 
-@router.callback_query(F.data.startswith('prediction_'))
 @flags.chat_action('upload_photo')
-async def call_prediction(call: CallbackQuery):
+@router.callback_query(Prediction.filter())
+async def call_prediction(
+        call: CallbackQuery,
+        connector: Connector,
+        callback_data: Prediction
+):
     await call.answer()
-    action = call.data.split('_')[1]
+    day = callback_data.day
     try:
-        with create_session() as db:
-            city = db.query(Alert.city).where(Alert.id == call.from_user.id).first()[0]
-        if action == 'today':
+        city = await connector.alert_city(call.from_user.id)
+        if day == 'today':
             await prediction.get_weather(city, tomorrow=False)
             await call.message.delete()
             await call.message.answer_photo(
@@ -173,7 +192,7 @@ async def call_prediction(call: CallbackQuery):
                 disable_notification=True
             )
             return
-        elif action == 'tomorrow':
+        elif day == 'tomorrow':
             await prediction.get_weather(city, tomorrow=True)
             await call.message.delete()
             await call.message.answer_photo(

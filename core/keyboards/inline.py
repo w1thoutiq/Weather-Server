@@ -1,57 +1,55 @@
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+# from aiogram.types import InlineKeyboardButton as Button, KeyboardButton  # , WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from core.keyboards.callback_data import Menu, AlertCall, Weather, Prediction, Remove, AddCity
 
 
 def menu_of_alerts(subscribe: bool = False):
     builder = InlineKeyboardBuilder()
     if subscribe:
-        builder.button(text='Поменять', callback_data='alerts_subscribe')
+        builder.button(text='Поменять', callback_data=AlertCall(action='subscribe'))
     else:
-        builder.button(text='Подписаться', callback_data='alerts_subscribe')
-    builder.button(text='Отписаться', callback_data='alerts_unsubscribe')
-    builder.button(text=f'Назад', callback_data=f'alerts_cancel')
+        builder.button(text='Подписаться', callback_data=AlertCall(action='subscribe'))
+    builder.button(text='Отписаться', callback_data=AlertCall(action='unsubscribe'))
+    builder.button(text=f'Назад', callback_data=AlertCall(action=f'cancel'))
     builder.adjust(2, 1)
     return builder.as_markup()
 
 
 def get_button_with_city(cities):
-    buttons = [[InlineKeyboardButton(
-        text=city, callback_data=f'city_{city}'
-    )] for city in cities]
-    buttons.append([InlineKeyboardButton(
-        text=f'Назад', callback_data=f'city_cancel')])
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    markup = InlineKeyboardBuilder()
+    for city in cities:
+        markup.button(text=city, callback_data=Remove(city=city))
+    markup.button(text=f'Назад', callback_data=Remove(city='cancel'))
+    markup.adjust(2, repeat=True)
+    return markup.as_markup()
+    # buttons = [[InlineKeyboardButton(
+    #     text=city, callback_data=f' remove_{city}'
+    # )] for city in cities]
+    # buttons.append([InlineKeyboardButton(
+    #     text=f'Назад', callback_data=f' remove_cancel')])
+    # return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
 def weather_btn(cities):
     markup = InlineKeyboardBuilder()
     for city in cities:
-        markup.add(InlineKeyboardButton(
-            text=city,
-            callback_data=f'weather_{city}'))
-    markup.adjust(1)
-    markup.add(InlineKeyboardButton(
-        text=f'Все регионы', callback_data=f'weather_all'
-    ), InlineKeyboardButton(
-        text=f'Назад', callback_data=f'weather_cancel'
-    ))
+        markup.button(text=city, callback_data=Weather(city=city))
+    markup.button(text=f'Все регионы', callback_data=Weather(city='all')),
+    markup.adjust(2, repeat=True)
+    markup.button(text=f'Назад', callback_data=Weather(city='cancel')),
     return markup.as_markup()
 
 
 def menu():
     markup = InlineKeyboardBuilder()
-    markup.add(InlineKeyboardButton(
-        text='Удалить регионы', callback_data='menu_change'))
-    markup.add(InlineKeyboardButton
-               (text='Добавить регионы', callback_data='menu_add'))
-    markup.add(InlineKeyboardButton(
-        text='Ваши регионы', callback_data='menu_my_city'))
-    markup.add(InlineKeyboardButton
-               (text='Рассылка', callback_data='menu_alerts'))
-    markup.add(InlineKeyboardButton(
-        text='Прогноз погоды', callback_data='menu_prediction'))
-    # markup.add(InlineKeyboardButton(
-    #     text='Мониторинг погоды', callback_data='menu_graph'))
+    markup.button(text='Удалить регионы', callback_data=Menu(action='change'))
+    markup.button(text='Добавить регионы', callback_data=Menu(action='add'))
+    markup.button(text='Ваши регионы', callback_data=Menu(action='my_city'))
+    markup.button(text='Рассылка', callback_data=Menu(action='alerts'))
+    markup.button(text='Прогноз погоды', callback_data=Menu(action='prediction'))
+    # markup.add(
+    # InlineKeyboardButton(text='Мониторинг погоды', callback_data='menu_graph')
+    # )
     markup.adjust(2)
     return markup.as_markup()
 
@@ -59,44 +57,51 @@ def menu():
 def graph_keyboard(cities):
     markup = InlineKeyboardBuilder()
     for city in cities:
-        markup.add(InlineKeyboardButton(
-            text=city, callback_data=f'graph_{city}'))
-    markup.add(InlineKeyboardButton(
-        text=f'Назад', callback_data=f'weather_cancel'))
-    markup.adjust(1)
+        markup.button(text=city, callback_data=f'graph_{city}')
+    markup.button(text=f'Назад', callback_data=Weather(city='cancel'))
+    markup.adjust(2)
     return markup.as_markup()
 
 
 def add_city_menu():
     markup = InlineKeyboardBuilder()
-    markup.add(
-        InlineKeyboardButton(
-            text='Установить единственным', callback_data='kb_set'),
-        InlineKeyboardButton(
-            text='Добавить регион', callback_data='kb_add'))
+    markup.button(text='Установить единственным', callback_data=AddCity(action='set')),
+    markup.button(text='Добавить регион', callback_data=AddCity(action='add'))
+    markup.adjust(2)
     return markup.as_markup()
 
 
 def admin():
     buttons = InlineKeyboardBuilder()
-    buttons.add(InlineKeyboardButton(
-        text='Вавилон', url='https://t.me/w1thoutiq'
-    ))
+    buttons.button(text='Вавилон', url='https://t.me/w1thoutiq')
     return buttons.as_markup()
 
 
 def mark():
     markup = InlineKeyboardBuilder()  # Создаём макеты для отображения кнопок
-    markup.add(InlineKeyboardButton(
-        text='help', callback_data='help'
-    ))  # Добавляем кнопку help
+    markup.button(text='help', callback_data='help')  # Добавляем кнопку help
+    # markup.button(
+    #     text="it's YouTube!", web_app=WebAppInfo(
+    #         url='https://'
+    #     )
+    # )
     return markup.as_markup()
 
 
 def prediction_menu():
     markup = InlineKeyboardBuilder()
-    markup.button(text='До конца дня', callback_data='prediction_today')
-    markup.button(text='На завтра', callback_data='prediction_tomorrow')
-    markup.button(text=f'Назад', callback_data=f'alerts_cancel')
+    markup.button(text='До конца дня', callback_data=Prediction(day='today'))
+    markup.button(text='На завтра', callback_data=Prediction(day='tomorrow'))
+    markup.button(text=f'Назад', callback_data=AlertCall(action=f'cancel'))
     markup.adjust(2)
     return markup.as_markup()
+
+
+# def admin_menu():
+#     markup = InlineKeyboardBuilder()
+#     markup.button(text="Прислать базу данных", callback_data=CallAdmin(data='db'))
+#     markup.button(text='Рассылка "alert"', callback_data=CallAdmin(data='alert'))
+#     markup.button(text='Рассылка "message"', callback_data=CallAdmin(data='message'))
+#     markup.button(text="Все пользователи", callback_data=CallAdmin(data='users'))
+#     markup.adjust(1)
+#     return markup.as_markup()

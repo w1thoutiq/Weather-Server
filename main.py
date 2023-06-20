@@ -2,70 +2,68 @@ import asyncio
 import logging
 
 from datetime import timedelta, datetime as dt
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from aiogram import Dispatcher, Bot
 from aiogram.utils.chat_action import ChatActionMiddleware
 
 from core.settings import settings
+from core.middlewares.filters import IsNotPrivate
 from core.utils.other import alerts_message, warning_database
-from core.utils.session_db import global_init
+from core.database.__all__ import global_init
 from core.handlers.message import router as message_router
 from core.handlers.callback import router as callback_router
-from core.middlewares.transition import router as transition_router
-from core.handlers.basic import router as basic_router
+from core.middlewares.utils import router as transition_router
+from core.handlers.basic import router as basic_router, is_not_private
 from core.handlers.city import router as city_router
 from core.handlers.admin import router as admin_router
 from core.handlers.subscribe import router as subscribe_router
+from core.middlewares.middlewares import SchedulerMiddleware, \
+    ConnectorMiddleware
+from core.database.Connector import Connector
 
 
 async def start():
     bot = Bot(token=settings.bots.bot_token, parse_mode='HTML')
-    dp = Dispatcher()
+    dispatcher = Dispatcher()
     scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - [%(levelname)s] - %(message)s"
     )
-    logging.info(settings.bots)
+    logging.info(settings)
 
-    # Сообщения по расписанию
-    scheduler.add_job(
-        func=alerts_message,
-        trigger='interval',
-        hours=1,
-        start_date=(
-                dt.now() + timedelta(minutes=60-dt.now().minute)
-        ).replace(second=0),
-        kwargs={'bot': bot}
-    )
+    next_hour = dt.now()+timedelta(minutes=60-dt.now().minute)
 
-    # Сбор статистики
-    scheduler.add_job(
-        func=warning_database,
-        trigger='cron',
-        hour='23',
-        minute='59',
-        start_date=dt.now(),
-        kwargs={'bot': bot}
-    )
+    # События по расписанию
+    scheduler.add_job(alerts_message, trigger='interval', hours=1,
+                      start_date=next_hour.replace(second=0),
+                      kwargs={'bot': bot})
+
+    scheduler.add_job(warning_database, trigger='cron',
+                      hour='23', minute='59', start_date=dt.now(),
+                      kwargs={'bot': bot})
 
     # Обработка middlewares
-    dp.message.middleware(ChatActionMiddleware())
-    dp.callback_query.middleware(ChatActionMiddleware())
+    dispatcher.update.middleware.register(ConnectorMiddleware(Connector()))
+    dispatcher.update.middleware.register(SchedulerMiddleware(scheduler))
+    dispatcher.callback_query.middleware.register(ChatActionMiddleware())
+    dispatcher.message.middleware.register(ChatActionMiddleware())
 
     # Подключение router'ов
-    dp.include_router(admin_router)
-    dp.include_router(city_router)
-    dp.include_router(subscribe_router)
-    dp.include_router(transition_router)
-    dp.include_router(basic_router)
-    dp.include_router(callback_router)
-    dp.include_router(message_router)
+    dispatcher.message.register(is_not_private, IsNotPrivate())
+    dispatcher.include_router(admin_router)
+    dispatcher.include_router(city_router)
+    dispatcher.include_router(subscribe_router)
+    dispatcher.include_router(callback_router)
+    dispatcher.include_router(basic_router)
+    dispatcher.include_router(transition_router)
+    dispatcher.include_router(message_router)
 
     try:
-        global_init('DataBase.db')
+        global_init('core/DataBase.db')
         scheduler.start()
-        await dp.start_polling(bot)
+        await dispatcher.start_polling(bot)
     finally:
         await bot.session.close()
 

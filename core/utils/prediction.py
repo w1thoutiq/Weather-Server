@@ -23,6 +23,7 @@ async def get_weather(city, tomorrow: bool = False):
     weather = []
     fig = plt.figure()
     if time_in_city.hour < 3 or time_in_city.hour > 20:
+        plt.title(f'{city}', color='white')
         plt.rcParams.update({
             "figure.facecolor": "black",
             "axes.facecolor": "black",
@@ -33,7 +34,6 @@ async def get_weather(city, tomorrow: bool = False):
             "ytick.color": "white",
             "grid.color": "white"
         })
-        plt.title(f'{city}', color='white')
     else:
         plt.title(f'{city}', color='black')
     plt.xlabel('Время, часы')
@@ -47,13 +47,6 @@ async def get_weather(city, tomorrow: bool = False):
         x = temperature.keys()
         plt.bar(x, y, color=weather)
         file_name = f'Bar\\{city}\\{(dt.now() + timedelta(days=1)).date()}.png'
-        try:
-            fig.savefig(file_name, dpi=150)
-        except FileNotFoundError:
-            makedirs(f'Bar\\{city}')
-            fig.savefig(file_name, dpi=150)
-        finally:
-            return
     elif tomorrow is False:
         for i in result['list']:
             if str(time_in_city.date()) == i['dt_txt'].split(' ')[0]:
@@ -63,10 +56,9 @@ async def get_weather(city, tomorrow: bool = False):
         y = temperature.values()
         plt.bar(x, y, color=weather)
         file_name = f'Bar\\{city}\\{dt.now().date()}.png'
-        try:
-            fig.savefig(file_name, dpi=150)
-        except FileNotFoundError:
-            makedirs(f'Bar\\{city}')
-            fig.savefig(file_name, dpi=150)
-        finally:
-            return
+    try:
+        fig.savefig(file_name, dpi=150)
+    except FileNotFoundError:
+        makedirs(f'Bar\\{city}')
+        fig.savefig(file_name, dpi=150)
+
