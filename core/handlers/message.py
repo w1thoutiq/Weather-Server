@@ -38,7 +38,7 @@ async def cmd_start(message: Message, connector: Connector):
 
 @router.callback_query(F.data == 'help')
 @router.message(Command(commands=['help']))
-async def cmd_help(message: Message | CallbackQuery, bot: Bot, connector: Connector):
+async def cmd_help(message: [Message, CallbackQuery], bot: Bot, connector: Connector):
     text = f'Я понимаю эти команды:\n'\
            f'/start\n/help\n/support\n/manage\n'\
            f'Для получения погоды напишите желаемый регион.\n'\
