@@ -40,8 +40,8 @@ async def start():
                       start_date=next_hour.replace(second=0),
                       kwargs={'bot': bot})
 
-    scheduler.add_job(warning_database, trigger='cron',
-                      hour='23', minute='59', start_date=dt.now(),
+    scheduler.add_job(warning_database, trigger='date',
+                      run_date=dt.now(),#, hour='23', minute='59'
                       kwargs={'bot': bot})
 
     # Обработка middlewares
