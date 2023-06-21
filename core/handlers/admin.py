@@ -40,18 +40,24 @@ async def call_alerts_message(message: Message, bot: Bot):
 
 @router.message(Command(commands=['db']), IsAdmin())
 @flags.chat_action('upload_document')
-async def upload_database(message: Message):
+async def upload_database(message: Message, bot: Bot):
     try:
-        await message.answer_document(
-            document=FSInputFile(f'core\\DataBase.db'),
+        await bot.send_document(
+            chat_id=message.from_user.id,
+            document=FSInputFile(r'core\DataBase.db'),
+            disable_notification=True
         )
     except TelegramNetworkError:
         await message.answer('Что-то пошло не так')
 
 
 @router.message(Command('log'), IsAdmin())
-async def send_log(msg: Message):
+async def send_log(msg: Message, bot: Bot):
     try:
-        await msg.answer_document(document=FSInputFile(r'core\log.log'))
+        await bot.send_document(
+            chat_id=msg.from_user.id,
+            document=FSInputFile(r'core\log.log'),
+            disable_notification=True
+        )
     except TelegramNetworkError:
         await msg.answer('Что-то пошло не так')
