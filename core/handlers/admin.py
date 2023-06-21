@@ -40,11 +40,10 @@ async def call_alerts_message(message: Message, bot: Bot):
 
 @router.message(Command(commands=['db']), IsAdmin())
 @flags.chat_action('upload_document')
-async def upload_database(message: Message, bot: Bot):
+async def upload_database(message: Message):
     try:
-        await bot.send_document(
-            chat_id=message.from_user.id,
-            document=FSInputFile(r'core\DataBase.db'),
+        await message.answer_document(
+            document=FSInputFile('core\\DataBase.db'),
             disable_notification=True
         )
     except TelegramNetworkError:
@@ -52,11 +51,10 @@ async def upload_database(message: Message, bot: Bot):
 
 
 @router.message(Command('log'), IsAdmin())
-async def send_log(msg: Message, bot: Bot):
+async def send_log(msg: Message):
     try:
-        await bot.send_document(
-            chat_id=msg.from_user.id,
-            document=FSInputFile(r'core\log.log'),
+        await msg.answer_document(
+            document=FSInputFile('core\\log.log'),
             disable_notification=True
         )
     except TelegramNetworkError:
