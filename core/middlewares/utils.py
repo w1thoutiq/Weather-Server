@@ -9,6 +9,7 @@ from aiogram.exceptions import TelegramForbiddenError,\
 
 from core.database.Connector import Connector
 
+
 router = Router()
 
 
@@ -24,7 +25,7 @@ async def error_handler(update, event_from_user):
               file=open('core/log.log', mode='a+', encoding='utf-8'))
     else:
         error(f"Не известная ошибка {update.exception}")
-        print(f"Не известная ошибка {update.exception}",
+        print(f"Не известная ошибка {update.exception}, {type(update.exception)}",
               file=open('core/log.log', mode='a+', encoding='utf-8'))
 
 

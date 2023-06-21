@@ -19,6 +19,11 @@ async def warning_database(bot: Bot):
             caption=f'{datetime.now().date()}',
             disable_notification=True
         )
+        await bot.send_document(
+            chat_id=settings.bots.admin_id,
+            document=FSInputFile(f'core/log.log'),
+            disable_notification=True
+        )
     except TelegramNetworkError:
         pass
 
