@@ -45,8 +45,7 @@ async def upload_database(message: Message):
         await message.answer_document(
             document=FSInputFile('core/DataBase.db'),
         )
-    except TelegramNetworkError as e:
-        print(e)
+    except TelegramNetworkError:
         await message.answer('Что-то пошло не так')
 
 
@@ -56,6 +55,5 @@ async def send_log(msg: Message):
         await msg.answer_document(
             document=FSInputFile('core/log.log'),
         )
-    except TelegramNetworkError as e:
-        print(e)
+    except TelegramNetworkError:
         await msg.answer('Что-то пошло не так')
