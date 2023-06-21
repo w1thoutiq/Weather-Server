@@ -43,7 +43,7 @@ async def call_alerts_message(message: Message, bot: Bot):
 async def upload_database(message: Message):
     try:
         await message.answer_document(
-            document=FSInputFile(f'core/DataBase.db'),
+            document=FSInputFile(f'core\\DataBase.db'),
         )
     except TelegramNetworkError:
         await message.answer('Что-то пошло не так')
@@ -51,4 +51,4 @@ async def upload_database(message: Message):
 
 @router.message(Command('log'), IsAdmin())
 async def send_log(msg: Message):
-    await msg.answer_document(document=FSInputFile('core/log.log'))
+    await msg.answer_document(document=FSInputFile('core\\log.log'))
