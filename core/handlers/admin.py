@@ -43,8 +43,7 @@ async def call_alerts_message(message: Message, bot: Bot):
 async def upload_database(message: Message):
     try:
         await message.answer_document(
-            document=FSInputFile('core\\DataBase.db'),
-            disable_notification=True
+            document=FSInputFile('core/DataBase.db'),
         )
     except TelegramNetworkError as e:
         print(e)
@@ -55,8 +54,7 @@ async def upload_database(message: Message):
 async def send_log(msg: Message):
     try:
         await msg.answer_document(
-            document=FSInputFile('core\\log.log'),
-            disable_notification=True
+            document=FSInputFile('core/log.log'),
         )
     except TelegramNetworkError as e:
         print(e)
