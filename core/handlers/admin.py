@@ -52,6 +52,6 @@ async def upload_database(message: Message):
 @router.message(Command('log'), IsAdmin())
 async def send_log(msg: Message):
     try:
-        await msg.answer_document(document=FSInputFile('core\\log.log'))
+        await msg.answer(document=FSInputFile('core\\log.log'))
     except TelegramNetworkError:
         await msg.answer('Что-то пошло не так')

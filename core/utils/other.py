@@ -102,11 +102,11 @@ async def alerts_message(bot: Bot):
                             parse_mode='HTML'
                         )
                         db.query(User).where(User.telegram_id == user).update(
-                            {User.active: True}
+                            {User.status: True}
                         )
                 except:
                     db.query(User).where(User.telegram_id == user).update(
-                        {User.active: False}
+                        {User.status: False}
                     )
     finally:
         db.commit()
