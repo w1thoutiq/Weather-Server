@@ -3,10 +3,10 @@ from aiogram.types import Message, CallbackQuery
 from aiogram import Router, F, Bot
 from sqlalchemy.exc import IntegrityError
 
-from core.keyboards.inline import mark, menu, admin
-from core.keyboards.reply import get_weather_button
-from core.utils.other import get_weather
-from core.database.Connector import Connector
+from source.keyboards.inline import mark, menu, admin
+from source.keyboards.reply import get_weather_button
+from source.utils.other import get_weather
+from source.database.connector import Connector
 
 
 router = Router()
@@ -18,7 +18,6 @@ async def cmd_start(message: Message, connector: Connector):
         await connector.add_in_user(
             telegram_id=message.from_user.id,
             username=message.from_user.username,
-            status='member'
         )
     except IntegrityError:
         await connector.update_status(message.from_user.id, 'member')

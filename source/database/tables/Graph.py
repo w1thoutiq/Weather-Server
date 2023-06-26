@@ -1,6 +1,6 @@
 # import sqlalchemy
 #
-# from core.database.session import SqlAlchemyBase
+# from source.database.session import SqlAlchemyBase
 #
 #
 # class AlertGraph(SqlAlchemyBase):

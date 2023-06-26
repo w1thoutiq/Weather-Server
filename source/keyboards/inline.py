@@ -1,11 +1,11 @@
-# from aiogram.types import InlineKeyboardButton as Button, KeyboardButton  # , WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from core.keyboards.callback_data import Menu, AlertCall, Weather, Prediction, Remove, AddCity
+from source.keyboards.callback_data import Menu, AlertCall, Weather, Prediction, Remove, AddCity
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
 
 
-def menu_of_alerts(subscribe: bool = False):
+def menu_of_alerts(subscriber: bool = False):
     builder = InlineKeyboardBuilder()
-    if subscribe:
+    if subscriber:
         builder.button(text='Поменять', callback_data=AlertCall(action='subscribe'))
     else:
         builder.button(text='Подписаться', callback_data=AlertCall(action='subscribe'))
@@ -17,10 +17,16 @@ def menu_of_alerts(subscribe: bool = False):
 
 def get_button_with_city(cities):
     markup = InlineKeyboardBuilder()
+    if len(cities) % 2 == 0:
+        lst = [2 for i in range(0, len(cities) + 2, 2)]
+    else:
+        lst = [2 for i in range(0, len(cities)-2, 2)]
+        lst.append(1)
+        lst.append(2)
     for city in cities:
         markup.button(text=city, callback_data=Remove(city=city))
     markup.button(text=f'Назад', callback_data=Remove(city='cancel'))
-    markup.adjust(2, repeat=True)
+    markup.adjust(*lst)
     return markup.as_markup()
     # buttons = [[InlineKeyboardButton(
     #     text=city, callback_data=f' remove_{city}'
@@ -30,13 +36,20 @@ def get_button_with_city(cities):
     # return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 
-def weather_btn(cities):
+def weather_btn(cities: list):
     markup = InlineKeyboardBuilder()
+    if len(cities) % 2 == 0:
+        lst = [2 for i in range(0, len(cities) + 2, 2)]
+    else:
+        lst = [2 for i in range(0, len(cities)-2, 2)]
+        lst.append(1)
+        lst.append(2)
     for city in cities:
         markup.button(text=city, callback_data=Weather(city=city))
-    markup.button(text=f'Все регионы', callback_data=Weather(city='all')),
-    markup.adjust(2, repeat=True)
-    markup.button(text=f'Назад', callback_data=Weather(city='cancel')),
+    markup.button(
+        text=f'Все регионы', callback_data=Weather(city='all')
+    ).button(text=f'Назад', callback_data=Weather(city='cancel'))
+    markup.adjust(*lst)
     return markup.as_markup()
 
 
@@ -58,8 +71,8 @@ def graph_keyboard(cities):
     markup = InlineKeyboardBuilder()
     for city in cities:
         markup.button(text=city, callback_data=f'graph_{city}')
-    markup.button(text=f'Назад', callback_data=Weather(city='cancel'))
     markup.adjust(2)
+    markup.button(text=f'Назад', callback_data=Weather(city='cancel'))
     return markup.as_markup()
 
 

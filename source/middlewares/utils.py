@@ -7,13 +7,13 @@ from aiogram.types import ChatMemberUpdated
 from aiogram.exceptions import TelegramForbiddenError,\
     TelegramBadRequest
 
-from core.database.Connector import Connector
+from source.database.connector import Connector
 
 
 router = Router()
 
 
-@router.errors()
+# @router.errors()
 async def error_handler(update, event_from_user):
     user = event_from_user.id
     username = event_from_user.username
@@ -21,12 +21,12 @@ async def error_handler(update, event_from_user):
             type(update.exception) is TelegramBadRequest:
         await Connector().update_status(user=user, status='blocked')
         error(f"Бот заблокирован у {username}")
-        print(f"Бот заблокирован у {username}",
-              file=open('core/log.log', mode='a+', encoding='utf-8'))
+        print(f"Бот заблокирован у {username}, {update.exception}, {type(update.exception)}",
+              file=open('source/log.log', mode='a+', encoding='utf-8'))
     else:
         error(f"Не известная ошибка {update.exception}")
         print(f"Не известная ошибка {update.exception}, {type(update.exception)}",
-              file=open('core/log.log', mode='a+', encoding='utf-8'))
+              file=open('source/log.log', mode='a+', encoding='utf-8'))
 
 
 @router.my_chat_member(ChatMemberUpdatedFilter(member_status_changed=KICKED))

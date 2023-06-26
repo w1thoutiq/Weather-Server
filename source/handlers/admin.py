@@ -3,10 +3,10 @@ from aiogram.exceptions import TelegramNetworkError
 from aiogram.filters import Command
 from aiogram.types import Message, FSInputFile
 
-from core.middlewares.filters import IsAdmin
+from source.middlewares.filters import IsAdmin
 
-from core.utils.other import alerts_message, get_weather_for_cities
-from core.database.Connector import Connector
+from source.utils.other import alerts_message, get_weather_for_cities
+from source.database.connector import Connector
 
 router = Router()
 
@@ -15,7 +15,7 @@ router = Router()
 async def cmd_message(message: Message, bot: Bot, connector: Connector):
     count_right = 0
     count_left = 0
-    for user in await connector.all_users():
+    for user in await connector.all_users_list():
         try:
             await get_weather_for_cities(user_id=user, bot=bot, chat_id=user)
             await connector.update_status(message.from_user.id)
@@ -38,12 +38,12 @@ async def call_alerts_message(message: Message, bot: Bot):
     await alerts_message(bot=bot)
 
 
-@router.message(Command(commands=['db']), IsAdmin())
+# @router.message(Command(commands=['db']), IsAdmin())
 @flags.chat_action('upload_document')
 async def upload_database(message: Message):
     try:
         await message.answer_document(
-            document=FSInputFile('core/DataBase.db'),
+            document=FSInputFile('source/DataBase.db'),
         )
     except TelegramNetworkError:
         await message.answer('Что-то пошло не так')
@@ -53,7 +53,7 @@ async def upload_database(message: Message):
 async def send_log(msg: Message):
     try:
         await msg.answer_document(
-            document=FSInputFile('core/log.log'),
+            document=FSInputFile('source/log.log'),
         )
     except TelegramNetworkError:
         await msg.answer('Что-то пошло не так')

@@ -1,7 +1,6 @@
 from aiogram import Bot, Router
 from aiogram.types import BotCommand, BotCommandScopeDefault, Message
 
-
 router = Router()
 
 

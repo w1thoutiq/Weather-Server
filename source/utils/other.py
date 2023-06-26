@@ -4,11 +4,13 @@ from aiogram import Bot, flags
 from aiogram.types import CallbackQuery, FSInputFile
 from datetime import datetime, timedelta
 
-from core.settings import settings
-from core.keyboards.inline import *
-from core.keyboards.reply import *
-from core.database.Connector import Connector
-from core.database.__all__ import User, create_session, Alert
+from sqlalchemy import select
+
+from source.settings import settings
+from source.keyboards.inline import *
+from source.keyboards.reply import *
+from source.database.connector import Connector
+from source.database import User, create_session, Alert
 
 
 async def warning_database(bot: Bot):
@@ -48,8 +50,9 @@ async def my_city(call: CallbackQuery, bot: Bot, connector: Connector):
 @flags.chat_action("typing")
 async def get_weather_for_cities(user_id: int, bot: Bot, chat_id: int):
     with create_session() as db:
-        cities = db.query(User.city).where(
-            User.telegram_id == user_id).first()[0].split(', ')
+        cities = await db.execute(
+            select(User.city).where(User.telegram_id == user_id))
+        cities = cities.first()[0].split('\n')
     if cities == ['']:
         return await bot.send_message(
             chat_id=chat_id,
@@ -92,26 +95,27 @@ def get_weather(city, for_graph=False, timezone: bool = False):
 
 
 @flags.chat_action("typing")
-async def alerts_message(bot: Bot):
+async def alerts_message(bot: Bot, db):
     try:
-        with create_session() as db:
-            users = [int(user[0]) for user in db.query(Alert.telegram_id).all()]
-            for user in users:
-                try:
-                    city = db.query(Alert.city).where(Alert.telegram_id == user).first()[0]
-                    timezone = db.query(Alert.timezone).where(Alert.telegram_id == user).first()[0]
-                    if ((datetime.now()-timedelta(seconds=10800)) + timedelta(seconds=timezone)).hour in [7, 13, 17]:
-                        await bot.send_message(
-                            chat_id=user,
-                            text=get_weather(city),
-                            parse_mode='HTML'
-                        )
-                        db.query(User).where(User.telegram_id == user).update(
-                            {User.status: True}
-                        )
-                except:
-                    db.query(User).where(User.telegram_id == user).update(
-                        {User.status: False}
-                    )
-    finally:
-        db.commit()
+        async with db() as db:
+            async with db.begin():
+                users = await db.execute(select(Alert.telegram_id))
+                users = users.fetchall()
+                users = [int(user[0]) for user in users]
+                for user in users:
+                    try:
+                        city = await db.execute(select(Alert.city).where(Alert.telegram_id == user))
+                        city = city.first()[0]
+                        timezone = db.execute(select(Alert.timezone).where(Alert.telegram_id == user))
+                        timezone = timezone.first()[0]
+                        if ((datetime.now()-timedelta(seconds=10800)) + timedelta(seconds=timezone)).hour in [7, 13, 17]:
+                            await bot.send_message(
+                                chat_id=user,
+                                text=get_weather(city),
+                                parse_mode='HTML'
+                            )
+                    except Exception:
+                        pass
+                await db.commit()
+    except Exception:
+        pass

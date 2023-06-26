@@ -2,12 +2,12 @@ from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from core.utils.states import StateAlerts
-from core.keyboards.inline import menu
-from core.keyboards.reply import cancel
-from core.database.tables.Alert import Alert
-from core.utils.other import get_weather
-from core.database.Connector import Connector
+from source.utils.states import StateAlerts
+from source.keyboards.inline import menu
+from source.keyboards.reply import cancel
+from source.database.tables.Alert import Alert
+from source.utils.other import get_weather
+from source.database.connector import Connector
 
 router = Router()
 

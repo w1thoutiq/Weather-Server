@@ -6,7 +6,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 # from aiogram.exceptions import TelegramForbiddenError as BotBlocked
 
 
-from core.database.Connector import Connector
+from source.database.connector import Connector
 
 
 class SchedulerMiddleware(BaseMiddleware):
@@ -19,6 +19,7 @@ class SchedulerMiddleware(BaseMiddleware):
             event: TelegramObject,
             data: Dict[str, Any]
     ) -> Any:
+        print(data)
         data['scheduler'] = self.scheduler
         return await handler(event, data)
 

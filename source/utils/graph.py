@@ -4,7 +4,7 @@
 # from datetime import datetime as dt
 #
 # from database.session import create_session
-# from core.utils.other import get_weather
+# from source.utils.other import get_weather
 # from database.tables.__all_tables__ import User  # , AlertGraph
 # #
 # import matplotlib.pyplot as plt

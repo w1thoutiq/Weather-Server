@@ -1,8 +1,11 @@
 import sqlalchemy
-from core.database.session import SqlAlchemyBase
+from source.database.session import SqlAlchemyBase
 
 
 class User(SqlAlchemyBase):
+
+    def __repr__(self):
+        return f'{self.telegram_id} {self.username} {self.city} {self.status}'
 
     def __int__(self, telegram_id: int, username: str, cities: str, status: bool):
         self.telegram_id = telegram_id
@@ -13,7 +16,7 @@ class User(SqlAlchemyBase):
     __table_args__ = {'extend_existing': True}
     __tablename__ = 'User'
 
-    lines = sqlalchemy.Column(
+    row = sqlalchemy.Column(
         sqlalchemy.INTEGER,
         autoincrement=True,
         unique=True,
@@ -22,7 +25,8 @@ class User(SqlAlchemyBase):
     telegram_id = sqlalchemy.Column(
         sqlalchemy.BIGINT,
         nullable=False,
-        unique=True
+        unique=True,
+        index=True
     )
     username = sqlalchemy.Column(
         sqlalchemy.String,
@@ -34,7 +38,8 @@ class User(SqlAlchemyBase):
     )
     status = sqlalchemy.Column(
         sqlalchemy.String,
-        nullable=False
+        nullable=False,
+        default='member'
     )
 
 

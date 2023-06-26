@@ -5,14 +5,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram import Router, F, Bot, flags
 from aiogram.types import CallbackQuery, FSInputFile
 
-# from core.keyboards.Data import Menu, AlertCall, Weather, Prediction, Remove
-from core.utils.other import get_weather, get_weather_for_cities, my_city
-from core.keyboards.inline import *
-from core.utils.states import *
-from core.utils import prediction
-from core.database.Connector import Connector
-from core.database.tables.Alert import Alert
-from core.keyboards.reply import cancel
+# from source.keyboards.Data import Menu, AlertCall, Weather, Prediction, Remove
+from source.utils.other import get_weather, get_weather_for_cities, my_city
+from source.keyboards.inline import *
+from source.utils.states import *
+from source.utils import prediction
+from source.database.connector import Connector
+from source.database.tables.Alert import Alert
+from source.keyboards.reply import cancel
 
 router = Router()
 
@@ -92,12 +92,13 @@ async def call_city(
         await my_city(call, bot=bot, connector=connector)
     elif action == 'alerts':
         if await connector.get_status_alert(call.from_user.id):
+            # print(1)
             city = await connector.alert_city(call.from_user.id)
             await call.message.edit_text(
                 text="Меню рассылки:\n\r"
                      "<strong>Вы подписаны \U00002705\n"
                      "Ваш регион - {}</strong>".format(city),
-                reply_markup=menu_of_alerts(subscribe=True),
+                reply_markup=menu_of_alerts(subscriber=True),
                 parse_mode='HTML')
         else:
             await call.message.edit_text(
