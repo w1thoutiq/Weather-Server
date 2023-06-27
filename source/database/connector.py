@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from source.database.tables.User import User
@@ -26,9 +26,9 @@ class Connector:
     async def update_status(self, user: int, status: str = 'member'):
         async with self.connector() as connector:
             async with connector.begin():
-                user = await connector.execute(select(User).where(
-                    User.telegram_id == user))
-                user.mappings().fetchone().get('User').status = status
+                await connector.execute(
+                    update(User).where(User.telegram_id == user).values(status=status)
+                )
                 return await connector.commit()
 
     async def all_users(self, user: int) -> bool:

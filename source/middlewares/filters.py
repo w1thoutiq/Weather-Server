@@ -5,7 +5,7 @@ from source.settings import settings
 
 class IsAdmin(BaseFilter):
     async def __call__(self, message: Message) -> bool:
-        return message.from_user.id == settings.bots.admin_id
+        return message.from_user.id == settings.bot.admin_id
 
 
 class IsNotPrivate(BaseFilter):

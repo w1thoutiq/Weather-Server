@@ -1,6 +1,5 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from source.keyboards.callback_data import Menu, AlertCall, Weather, Prediction, Remove, AddCity
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, KeyboardButton
 
 
 def menu_of_alerts(subscriber: bool = False):

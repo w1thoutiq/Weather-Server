@@ -13,6 +13,7 @@ from .basic import router as basic_router
 from .city import router as city_router
 from .admin import router as admin_router
 from .subscribe import router as subscribe_router
+# from .router import connect_handlers
 
 __all__ = [
     'weather_btn',
@@ -44,7 +45,8 @@ __all__ = [
     'subscribe_router',
     'city_router',
     'basic_router',
-    'transition_router'
+    'transition_router',
+    'connect_handlers'
 ]
 
 

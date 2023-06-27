@@ -30,11 +30,11 @@ def get_settings(path: str):
             admin_id=env.int('ADMIN_ID')
         ),
         env=Environs(
-            db_name=env.str('DB_NAME'),
+            db_name=env.str('NAME'),
             db_pass=env.str('DB_PASS'),
             db_username=env.str('DB_USERNAME')
         )
     )
 
 
-settings = get_settings('.env')
+settings = get_settings('source/.env')

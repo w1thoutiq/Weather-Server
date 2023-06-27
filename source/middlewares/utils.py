@@ -13,7 +13,7 @@ from source.database.connector import Connector
 router = Router()
 
 
-# @router.errors()
+@router.errors()
 async def error_handler(update, event_from_user):
     user = event_from_user.id
     username = event_from_user.username
